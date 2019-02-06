@@ -72,16 +72,23 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Documentacion\Queries.txt" />
+    <Content Include="Documentacion\Script Fcat PAQ.txt" />
     <Content Include="Servicios\facturaXACT.svc" />
     <Content Include="Servicios\facturaXADM.svc" />
     <Content Include="Servicios\facturaXINT.svc" />
     <Content Include="Servicios\facturaXPAQ.svc" />
     <Content Include="Servicios\facturaXREL.svc" />
+    <Content Include="Servicios\notaCredito.svc" />
+    <Content Include="Servicios\notaDebito.svc" />
+    <Content Include="Servicios\notaInternacional.svc" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Clases\eFactura.cs" />
     <Compile Include="Clases\Extensiones.cs" />
+    <Compile Include="Clases\notaCreditoJson.cs" />
+    <Compile Include="Clases\NotaDebitoJson.cs" />
     <Compile Include="Clases\respuestaJson.cs" />
     <Compile Include="Clases\validarSchema.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -110,10 +117,21 @@
     <Compile Include="Contratos\IfacturaXINT.cs" />
     <Compile Include="Contratos\IfacturaXPAQ.cs" />
     <Compile Include="Contratos\IfacturaXREL.cs" />
+    <Compile Include="Contratos\InotaCredito.cs" />
+    <Compile Include="Contratos\InotaDebito.cs" />
+    <Compile Include="Contratos\InotaInternacional.cs" />
+    <Compile Include="Servicios\notaCredito.svc.cs">
+      <DependentUpon>notaCredito.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Servicios\notaDebito.svc.cs">
+      <DependentUpon>notaDebito.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Servicios\notaInternacional.svc.cs">
+      <DependentUpon>notaInternacional.svc</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Documentacion\" />
     <Folder Include="Schema\" />
   </ItemGroup>
   <ItemGroup>

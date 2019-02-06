@@ -1,0 +1,49 @@
+﻿SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
+upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, F.Cantidad * F.ValTotal as Vlr_Total_Serv
+FROM facfactura a
+INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
+INNER JOIN  admatencion c on a.iddestino=c.idatencion
+INNER JOIN  admcliente d on d.idcliente=c.idcliente
+INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
+INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
+INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo IN (8,12)
+INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino
+LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
+LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
+LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
+WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=4811177
+ UNION ALL
+SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
+upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, F.Cantidad * F.ValTotal as Vlr_Total_Serv
+FROM facfactura a
+INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
+INNER JOIN  admatencion c on a.iddestino=c.idatencion
+INNER JOIN  admcliente d on d.idcliente=c.idcliente
+INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
+INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
+INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
+INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal=2513
+LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
+LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
+LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
+WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=4811177
+UNION ALL
+SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
+upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, F.Cantidad * F.ValTotal as Vlr_Total_Serv
+FROM facfactura a
+INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
+INNER JOIN  admatencion c on a.iddestino=c.idatencion
+INNER JOIN  admcliente d on d.idcliente=c.idcliente
+INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
+INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
+INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
+INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal<>2513
+LEFT JOIN vwFacProcPrincAsocPaq PQ on PQ.idfactura = a.idfactura and g.IdProcPrincipal=PQ.IdProcPrincipal 
+LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
+LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
+LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
+WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=4811177 ORDER BY 4 
+

@@ -251,11 +251,11 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
 
                 datosCliente.PartyIdentification = idenCliente;
                 datosCliente.Name = _razonSocial;
-                objDireccionCliente.Line = _direccionCliente; //TODO: Obtener Direccion de BD
-                objDireccionCliente.CityName = _municipioCliente;  //TODO: Obtener Ciudad de BD
-                objDireccionCliente.CountryCode = "CO"; //TODO: DEfinir de Donde Obtener(Pais del Cliente) de Base de Datos
-                objDireccionCliente.CitySubdivisionName = ""; //TODO: De Donde  Se obtiene de la Base de Datos.
-                objDireccionCliente.Department = _departamento; //TODO: Obtener Departamento de REsidencia el Cliente
+                objDireccionCliente.Line = _direccionCliente;
+                objDireccionCliente.CityName = _municipioCliente;
+                objDireccionCliente.CountryCode = "CO";
+                objDireccionCliente.CitySubdivisionName = ""; //TODO: De Donde  Se obtiene de la Base de Datos. Especificidad en la direccion(Barrio, Edifico etc)
+                objDireccionCliente.Department = _departamento;
                 ubicacionFisicaCliente.Address = objDireccionCliente;
                 datosCliente.PhysicalLocation = ubicacionFisicaCliente;
 
@@ -279,7 +279,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                 repLegalCliente.MiddleName = segundoNombre;
                 repLegalCliente.FamilyName = Apellidos;
                 repLegalCliente.Telephone = _telefonoCliente;
-                repLegalCliente.Email = _correoCliente; // TODO: DEfinir la ubicacion de Envio de las cuentas de correo.
+                repLegalCliente.Email = _correoCliente;
 
                 //Cliente.Party.PartyTaxScheme.TaxLevelCode = "2"; // Regimen Comun;
                 datosCliente.Person = repLegalCliente;

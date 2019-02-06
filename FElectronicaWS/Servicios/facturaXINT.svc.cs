@@ -238,15 +238,15 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
 
                 datosCliente.PartyIdentification = idenCliente;
                 datosCliente.Name = _razonSocial;
-                objDireccionCliente.Line = _direccionCliente; //TODO: Obtener Direccion de BD
-                objDireccionCliente.CityName = _municipioCliente;  //TODO: Obtener Ciudad de BD
+                objDireccionCliente.Line = _direccionCliente;
+                objDireccionCliente.CityName = _municipioCliente;
                 objDireccionCliente.CountryCode = "AW"; //TODO: DEfinir de Donde Obtener(Pais del Cliente) de Base de Datos
-                objDireccionCliente.CitySubdivisionName = ""; //TODO: De Donde  Se obtiene de la Base de Datos.
-                objDireccionCliente.Department = ""; //TODO: Obtener Departamento de REsidencia el Cliente
+                objDireccionCliente.CitySubdivisionName = ""; //TODO: De Donde  Se obtiene de la Base de Datos. Especificidad en la direccion(Barrio, Edifico etc)
+                objDireccionCliente.Department = "";
                 ubicacionFisicaCliente.Address = objDireccionCliente;
                 datosCliente.PhysicalLocation = ubicacionFisicaCliente;
 
-                RegimenCliente.TaxLevelCode = "2";// TODO: Validar si este codigo (TaxLevelCode) es Fijo
+                RegimenCliente.TaxLevelCode = "2";// TODO: Validar si este codigo (TaxLevelCode) es Fijo. ??
                 datosCliente.PartyTaxScheme = RegimenCliente;
                 string primerNombre = string.Empty;
                 string segundoNombre = string.Empty;

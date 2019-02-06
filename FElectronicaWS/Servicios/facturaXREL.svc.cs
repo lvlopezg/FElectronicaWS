@@ -247,17 +247,16 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
 
                 }
                 idenCliente.SchemeID = "31";
-                idenCliente.ID = _numDocCliente; //TODO: Obtener de BD Se utiliza Compensar como Ej FACT:4680824
-
+                idenCliente.ID = _numDocCliente;
                 Cliente.AdditionalAccountID = "1"; //TODO: Tipo de contribuyente. Buscar en SAHI
 
                 datosCliente.PartyIdentification = idenCliente;
-                datosCliente.Name = _razonSocial;//TODO: Obtener Razon Social de BD
-                objDireccionCliente.Line = _direccionCliente; //TODO: Obtener Direccion de BD
-                objDireccionCliente.CityName = _municipioCliente;  //TODO: Obtener Ciudad de BD
+                datosCliente.Name = _razonSocial;
+                objDireccionCliente.Line = _direccionCliente;
+                objDireccionCliente.CityName = _municipioCliente;
                 objDireccionCliente.CountryCode = "CO"; //TODO: DEfinir de Donde Obtener(Pais del Cliente) de Base de Datos
-                objDireccionCliente.CitySubdivisionName = ""; //TODO: De Donde  Se obtiene de la Base de Datos.
-                objDireccionCliente.Department = _departamento; //TODO: Obtener Departamento de REsidencia el Cliente
+                objDireccionCliente.CitySubdivisionName = ""; //TODO: De Donde  Se obtiene de la Base de Datos. Aclaracion de direccion(Barrio, etc)
+                objDireccionCliente.Department = _departamento;
                 ubicacionFisicaCliente.Address = objDireccionCliente;
                 datosCliente.PhysicalLocation = ubicacionFisicaCliente;
 
@@ -294,7 +293,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                 repLegalCliente.MiddleName = segundoNombre;
                 repLegalCliente.FamilyName = Apellidos;
                 repLegalCliente.Telephone = _telefonoCliente;
-                repLegalCliente.Email = _correoCliente; // TODO: DEfinir la ubicacion de Envio de las cuentas de correo.
+                repLegalCliente.Email = _correoCliente;
 
                 //Cliente.Party.PartyTaxScheme.TaxLevelCode = "2"; // Regimen Comun;
                 datosCliente.Person = repLegalCliente;

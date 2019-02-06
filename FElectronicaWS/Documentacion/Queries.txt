@@ -1,0 +1,14 @@
+﻿
+SELECT top 100 * FROM facFactura ORDER BY FecFactura desc
+
+SELECT * FROM genTercero WHERE NumDocumento='860066942'
+
+SELECT top 10 * FROM facfactura FFAC
+INNER JOIN conContrato CON on FFAC.IdContrato=CON.IdContrato
+INNER JOIN genTercero TER ON CON.IdTercero=TER.IdTercero
+WHERE FFAC.IdFactura=4797292
+
+WHERE TER.NumDocumento='860066942'
+SELECT top 10 * FROM conContrato WHERE IdContrato=6309
+
+SELECT * FROM genTercero WHERE IdTercero=1475

@@ -17,7 +17,7 @@ namespace FElectronicaWS.Servicios
     public class facturaXADM : IfacturaXADM
     {
         private static Logger logFacturas = LogManager.GetCurrentClassLogger();
-        public string GetData(int nroFactura, int idCliente, int nroAtencion, string urlPdfFactura,string moneda)
+        public string GetData(int nroFactura, int idCliente, int nroAtencion, string urlPdfFactura, string moneda)
         {
             logFacturas.Info("Se recibe factura con siguientes datos nroFactura: " + nroFactura + "  IdCliente:" + idCliente + " nroAtencion:" + nroAtencion + " urlPdf:" + urlPdfFactura);
             try
@@ -354,8 +354,6 @@ WHERE FTD.idFactura = @idFactura";
                                     List<TaxLine> impuestoProducto = new List<TaxLine>();
                                     TaxLine ivaProducto = new TaxLine();
                                     TaxLine ipoconsumoProducto = new TaxLine();
-
-
                                     TaxAmount ivaTax = new TaxAmount();
                                     TaxAmount ipoConsumoTax = new TaxAmount();
                                     TaxLine lineaImpuestos = new TaxLine();
@@ -372,7 +370,6 @@ WHERE FTD.idFactura = @idFactura";
                                     lineaProducto.Item = itemLinea;
                                     precioProd.Amount = valor;
                                     lineaProducto.Price = precioProd;
-
                                     ivaProducto.ID = "01";
                                     //ivaProducto.Percent = 0;
                                     ivaTax.Amount = 0;
@@ -381,16 +378,13 @@ WHERE FTD.idFactura = @idFactura";
                                     impuestoProducto.Add(ivaProducto);
 
                                     //                                lineaProducto.TaxLine.Add(ivaProducto);
-
                                     ipoconsumoProducto.ID = "02";
                                     //ipoconsumoProducto.Percent = 0;
                                     ipoConsumoTax.Amount = 0;
                                     ipoConsumoTax.Currency = "COP";
                                     ipoconsumoProducto.TaxAmount = ipoConsumoTax;
                                     impuestoProducto.Add(ipoconsumoProducto);
-
                                     lineaProducto.TaxLine = impuestoProducto;
-
                                     detalleProductos.Add(lineaProducto);
                                     nroLinea++;
                                 }
