@@ -12,6 +12,6 @@ namespace FElectronicaWS.Contratos
     public interface InotaDebito
     {
         [OperationContract]
-        string getData(Int32 nroNota, string monedaNota, Int32 nroFactura, Int32 idPaciente, Int32 nroAtencion, string urlNota);
+        string getData(int nroNotaDebito, int idCliente, int nroAtencion, string urlNotaDebito);
     }
 }

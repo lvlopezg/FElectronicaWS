@@ -31,6 +31,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>FElectronicaWS.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -39,6 +40,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>FElectronicaWS.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Json.NET.Web, Version=1.0.49.0, Culture=neutral, processorArchitecture=MSIL">
@@ -76,6 +78,7 @@
     <Content Include="Documentacion\Script Fcat PAQ.txt" />
     <Content Include="Servicios\facturaXACT.svc" />
     <Content Include="Servicios\facturaXADM.svc" />
+    <Content Include="Servicios\facturaXADMext.svc" />
     <Content Include="Servicios\facturaXINT.svc" />
     <Content Include="Servicios\facturaXPAQ.svc" />
     <Content Include="Servicios\facturaXREL.svc" />
@@ -89,6 +92,8 @@
     <Compile Include="Clases\Extensiones.cs" />
     <Compile Include="Clases\notaCreditoJson.cs" />
     <Compile Include="Clases\NotaDebitoJson.cs" />
+    <Compile Include="Clases\respuestaEntregaError.cs" />
+    <Compile Include="Clases\respuestaEntregaExitosa.cs" />
     <Compile Include="Clases\respuestaJson.cs" />
     <Compile Include="Clases\validarSchema.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -102,6 +107,9 @@
     </Compile>
     <Compile Include="Servicios\facturaXADM.svc.cs">
       <DependentUpon>facturaXADM.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Servicios\facturaXADMext.svc.cs">
+      <DependentUpon>facturaXADMext.svc</DependentUpon>
     </Compile>
     <Compile Include="Servicios\facturaXINT.svc.cs">
       <DependentUpon>facturaXINT.svc</DependentUpon>
@@ -120,6 +128,7 @@
     <Compile Include="Contratos\InotaCredito.cs" />
     <Compile Include="Contratos\InotaDebito.cs" />
     <Compile Include="Contratos\InotaInternacional.cs" />
+    <Compile Include="Contratos\IfacturaXADMext.cs" />
     <Compile Include="Servicios\notaCredito.svc.cs">
       <DependentUpon>notaCredito.svc</DependentUpon>
     </Compile>
@@ -138,6 +147,7 @@
     <Content Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="FElectronicaWS.ruleset" />
     <None Include="NLog.xsd">
       <SubType>Designer</SubType>
     </None>

@@ -8,8 +8,8 @@ namespace FElectronicaWS.Clases
 {
     public class respuestaJson
     {
-        [JsonProperty("Errors")]
-        public List<Error> Errors { get; set; }
+        //[JsonProperty("Errors")]
+        // public List<Error> Errors { get; set; }
         [JsonProperty("Resultado")]
         public string Resultado { get; set; }
         [JsonProperty("EsExitoso")]
@@ -17,12 +17,12 @@ namespace FElectronicaWS.Clases
         [JsonProperty("Identificador")]
         public string Identificador { get; set; }
     }
-    public class Error
-    {
-        [JsonProperty("Errors")]
-        public List<string> Errors { get; set; }
-        [JsonProperty("Aplication")]
-        public string Aplication { get; set; }
-    }
+    //public class Error
+    //{
+    //    [JsonProperty("Errors")]
+    //    public List<string> Errors { get; set; }
+    //    [JsonProperty("Aplication")]
+    //    public string Aplication { get; set; }
+    //}
 
 }
