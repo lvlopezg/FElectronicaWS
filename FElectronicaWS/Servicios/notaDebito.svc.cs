@@ -13,45 +13,155 @@ using System.Text;
 
 namespace FElectronicaWS.Servicios
 {
-	public class notaDebito : InotaDebito
-	{
-		private static Logger logFacturas = LogManager.GetCurrentClassLogger();
-		public string getData(int nroNotaDebito, int idCliente, int nroAtencion, string urlPdfNotaDebito)
-		{
-			logFacturas.Info("Se recibe Nota Debito con siguientes datos:nroNota:" + nroNotaDebito + "  IdCliente:" + idCliente + " nroAtencion:" + nroAtencion + " urlPdf:" + urlPdfNotaDebito);
-			try
-			{
-				#region inicializar
-				Decimal _Valtotal = 0;
-				Decimal _ValDescuento = 0;
-				Decimal _ValDescuentoT = 0;
-				Decimal _ValPagos = 0;
-				Decimal _ValImpuesto = 0;
-				Decimal _ValCobrar = 0;
-				DateTime _FecNotaCredito = DateTime.Now;
-				Int32 _idMovimiento = 0;
-				Int32 _IdUsuarioR = 0;
-				Int32 _idTercero = 0;
-				Int16 _naturalezaCliente = 0;
-				Int16 _tipoPersona = 0;
-				Int32 _facturaRelacionada = 0;
-				string _nombrePaciente = string.Empty;
-				string _nroDocumentopaciente = string.Empty;
-				Byte _TipoDocPaciente = 0;
-				string _numDocCliente = string.Empty;
-				Byte _tipoDocCliente = 0;
-				string _razonSocial = string.Empty;
-				string _repLegal = string.Empty;
+    public class notaDebito : InotaDebito
+    {
+        private static Logger logFacturas = LogManager.GetCurrentClassLogger();
+        
+        public string getData(int nroNotaDebito, int idCliente, int nroAtencion, string monedaNota, int nroFactura, string urlPdfNotaDebito)
+        {
+            logFacturas.Info($"Se recibe Nota Debito con siguientes datos:Nro Nota:{ nroNotaDebito}  IdCliente: {idCliente} nroAtencion:{nroAtencion} urlPdf:{urlPdfNotaDebito}");
+            try
+            {
+                #region inicializar
+                // Inicializacion
+                //Int32 _idContrato = 0;
+                Decimal _Valtotal = 0;
+                //Decimal _ValDescuento = 0;
+                //Decimal _ValDescuentoT = 0;
+                Decimal _ValPagos = 0;
+                //Decimal _ValImpuesto = 0;
+                Decimal _ValCobrar = 0;
+                DateTime _FecNotaDebito = DateTime.Now;
+                Int32 _facturaRelacionada = 0;
+                Int32 _idMovimiento = 0;
+                //Decimal _valPos = 0;
+                //Decimal _valNoPos = 0;
+                //Int32 _IdUsuarioR = 0;
+                //Int32 _idTercero = 0;
+                //string _usrNombre = string.Empty;
+                //string _usrNumDocumento = string.Empty;
+                //Byte _usrIdTipoDoc = 0;
+                //string _numDocCliente = string.Empty;
+                //Byte _tipoDocCliente = 0;
+                //string _razonSocial = string.Empty;
+                //string _repLegal = string.Empty;
+                //string _RegimenFiscal = string.Empty;
+                //Int16 _idNaturaleza = 0;
+                //int concepto = 0;
+                string DescNota = string.Empty;
+                FormaPago formaPagoTmp = new FormaPago();
 
-				//string pathurl = "https://pre.ifacturasalud.transfiriendo.com/IFacturaSanIgnacioWebapi/api/taxDocument/getPdf/Cufe/413dee677e3d22c676d5befb9748a0b7b504193c";
-				//string[] partesUrl = pathurl.Split('/');
-				//int posicion = pathurl.LastIndexOf('/');
-				string xx = "";
-				#endregion
-				using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
-				{
-					conn.Open();
-					string qryNotaCredito1 = @"SELECT B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,B.ValMonto,cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,cxcCta.ValFactura,B.IdMovimiento FROM cxcTipoMovimientoEfectoNotas A
+                #endregion
+                //Fin de Inicializacion
+                documentoRoot documentoF2 = new documentoRoot();
+                Documento NotaDebitoEnviar = new Documento();
+                NotaDebitoEnviar.identificadorTransaccion = "D7F719C2 - 75F4 - 4F06 - B7CB - F583FC28DBEE";
+                NotaDebitoEnviar.URLPDF = urlPdfNotaDebito;
+                NotaDebitoEnviar.NITFacturador = Properties.Settings.Default.NitHusi;
+                NotaDebitoEnviar.prefijo = Properties.Settings.Default.PrefijoNotaND;
+                NotaDebitoEnviar.numeroDocumento = nroNotaDebito.ToString();
+                NotaDebitoEnviar.tipoDocumento = 3;
+                NotaDebitoEnviar.subTipoDocumento = "92";
+                NotaDebitoEnviar.tipoOperacion = "05";
+                NotaDebitoEnviar.generaRepresentacionGrafica = false;
+
+                //ClienteJuridico cliente = new ClienteJuridico();
+                //string urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteJuridico?idFactura={nroFactura}";
+                //logFacturas.Info("URL de Request:" + urlClientes);
+                //HttpWebRequest peticion = WebRequest.Create(urlClientes) as HttpWebRequest;
+                //peticion.Method = "GET";
+                //peticion.ContentType = "application/json";
+                //HttpWebResponse respuestaClientes = peticion.GetResponse() as HttpWebResponse;
+                //StreamReader sr = new StreamReader(respuestaClientes.GetResponseStream());
+                //string infCliente = sr.ReadToEnd();
+                //logFacturas.Info("Cliente:" + infCliente);
+                //cliente = JsonConvert.DeserializeObject<ClienteJuridico>(infCliente);
+                bool facXRel = false;
+                using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conn.Open();
+                    string qryEspeciales = "SELECT IdDestino,IndTipoFactura FROM facFactura where IdFactura=@idFactura";
+                    SqlCommand cmdEspeciales = new SqlCommand(qryEspeciales, conn);
+                    cmdEspeciales.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+                    SqlDataReader rdEspeciales = cmdEspeciales.ExecuteReader();
+                    if (rdEspeciales.HasRows)
+                    {
+                        if (rdEspeciales.Read())
+                        {
+                            if (rdEspeciales.GetInt32(0) == 0 && rdEspeciales.GetString(1) == "RAC")
+                            {
+                                facXRel = true;
+                            }
+                        }
+                    }
+                }
+                string urlClientes = string.Empty;
+                //ClienteInternacional cliente = new ClienteInternacional();
+                if (idCliente == 0 && nroAtencion == 0 && !facXRel)
+                {
+                    urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteInternacional?idFactura={nroFactura}";
+                }
+                else
+                {
+                    //ClienteJuridico cliente = new ClienteJuridico();
+                    urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteJuridico?idFactura={nroFactura}";
+                }
+                logFacturas.Info("URL de Request:" + urlClientes);
+                HttpWebRequest peticion = WebRequest.Create(urlClientes) as HttpWebRequest;
+                peticion.Method = "GET";
+                peticion.ContentType = "application/json";
+                HttpWebResponse respuestaClientes = peticion.GetResponse() as HttpWebResponse;
+                StreamReader sr = new StreamReader(respuestaClientes.GetResponseStream());
+                string infCliente = sr.ReadToEnd();
+                logFacturas.Info("Cliente:" + infCliente);
+                Cliente cliente = JsonConvert.DeserializeObject<Cliente>(infCliente);
+
+
+                //****************** CLIENTE
+                //  Variables Inicializacion
+                string _direccionCliente = string.Empty;
+                string _telefonoCliente = string.Empty;
+                string _municipioCliente = string.Empty;
+                string _departamento = string.Empty;
+                int _localizacionCliente = 0;
+                string _correoCliente = string.Empty;
+                //**** 
+                string codCufeFactura = string.Empty;
+
+                List<DetallesItem> detalleProductos = new List<DetallesItem>();
+
+                using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conn.Open();
+
+                    //string qrycodCufeFact = "SELECT CodCUFE FROM facFacturaTempWEBService WHERE IdFactura=@idFactura"; // TODO:Acoplar Historioco
+                    string qrycodCufeFact = @"SELECT CodCufe FROM facFacturaTempWEBService
+WHERE idFactura = @idFactura
+UNION
+SELECT CodCufe FROM facFacturaTempWEBServiceHist
+WHERE idFactura = @idFactura";
+                    SqlCommand cmdCodCufe = new SqlCommand(qrycodCufeFact, conn);
+                    cmdCodCufe.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+                    SqlDataReader rdCufe = cmdCodCufe.ExecuteReader();
+                    if (rdCufe.HasRows)
+                    {
+                        rdCufe.Read();
+                        codCufeFactura = rdCufe.GetString(0);
+                    }
+                    else
+                    {
+                        // Retora mensaje de error. Porque no hay CUFE de Factyura
+                    }
+                    //FormaPago formaPagoTmp = new FormaPago();
+                    string formatoWrk = formatosFecha.formatofecha(_FecNotaDebito);
+                    NotaDebitoEnviar.fechaEmision = formatoWrk.Split('T')[0];
+                    NotaDebitoEnviar.horaEmision = formatoWrk.Split('T')[1];
+                    NotaDebitoEnviar.moneda = monedaNota;
+                    formaPagoTmp.tipoPago = 1;
+                    formaPagoTmp.codigoMedio = "10";
+                    NotaDebitoEnviar.formaPago = formaPagoTmp;
+
+                    string qryNotaDebito1 = @"SELECT B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,B.ValMonto,cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,cxcCta.ValFactura,B.IdMovimiento FROM cxcTipoMovimientoEfectoNotas A
 INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
 INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
 LEFT JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
@@ -64,611 +174,783 @@ INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
 INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
 INNER JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
 where A.Indhabilitado=1 
-and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'
-";
-					SqlCommand cmdNotaCredito1 = new SqlCommand(qryNotaCredito1, conn);
-					cmdNotaCredito1.Parameters.Add("@nroNotaDebito", SqlDbType.VarChar).Value = nroNotaDebito.ToString();
-					cmdNotaCredito1.Parameters.Add("@nroNotaDebito2", SqlDbType.Int).Value = nroNotaDebito;
-					SqlDataReader rdNotaCredito1 = cmdNotaCredito1.ExecuteReader();
-					if (rdNotaCredito1.HasRows)
-					{
-						rdNotaCredito1.Read();
-						_idMovimiento = rdNotaCredito1.GetInt32(14);
-						var valorTNota = rdNotaCredito1["ValMonto"];
-						_Valtotal = Decimal.Parse(valorTNota.ToString());
-						_ValCobrar = Decimal.Parse(valorTNota.ToString());
-						_FecNotaCredito = rdNotaCredito1.GetDateTime(4);
-						_facturaRelacionada = Int32.Parse(rdNotaCredito1.GetString(12));
-						_idTercero = rdNotaCredito1.GetInt32(7);
-					}
+and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
+                    SqlCommand cmdNotaDebito = new SqlCommand(qryNotaDebito1, conn);
+                    cmdNotaDebito.Parameters.Add("@nroNotaDebito", SqlDbType.VarChar).Value = nroNotaDebito.ToString();
+                    cmdNotaDebito.Parameters.Add("@nroNotaDebito2", SqlDbType.Int).Value = nroNotaDebito;
+                    SqlDataReader rdNotaDebito = cmdNotaDebito.ExecuteReader();
+                    if (rdNotaDebito.HasRows)
+                    {
+                        rdNotaDebito.Read();
+                        _idMovimiento = rdNotaDebito.GetInt32(14);
+                        var valorTNota = rdNotaDebito["ValMonto"];
+                        _Valtotal = Decimal.Parse(valorTNota.ToString());
+                        _ValCobrar = Decimal.Parse(valorTNota.ToString());
+                        _FecNotaDebito = rdNotaDebito.GetDateTime(4);
+                        _facturaRelacionada = Int32.Parse(rdNotaDebito.GetString(12));
+                        //_idTercero = rdNotaDebito.GetInt32(7);
+                    }
+                    else
+                    {
+                        List<ErroresItem> detalle = new List<ErroresItem>();
+                        ErroresItem item = new ErroresItem();
+                        item.codigo = "990101"; //codigo de Error Especifico en HUSIpara adherirse al Modelo de Errores Transfiriendo
+                        item.mensaje = "No hay informacion disponible de la Nota, para obtener informacion necesaria. La Nota no existe";
+                        detalle.Add(item);
+                        return UtilidadRespuestas.insertarErrorND("ND", nroNotaDebito, "9901", "Informacion de la Nota No Encontada", DateTime.Now, detalle);
+                    }
 
-					string strTercero = "SELECT IdTipoDoc,NumDocumento,NomTercero,idnaturaleza FROM genTercero WHERE IdTercero=@tercero";
-					SqlCommand cmdTercero = new SqlCommand(strTercero, conn);
-					cmdTercero.Parameters.Add("@tercero", SqlDbType.Int).Value = _idTercero;
-					SqlDataReader rdtercero = cmdTercero.ExecuteReader();
-					if (rdtercero.HasRows)
-					{
-						rdtercero.Read();
-						_tipoDocCliente = rdtercero.GetByte(0);
-						_numDocCliente = rdtercero.GetString(1);
-						_razonSocial = rdtercero.GetString(2);
-						_naturalezaCliente = rdtercero.GetInt16(3);
-					}
+                    #region MyRegion
+                    //string strTercero = "SELECT IdTipoDoc,NumDocumento,NomTercero,idnaturaleza FROM genTercero WHERE IdTercero=@tercero";
+                    //SqlCommand cmdTercero = new SqlCommand(strTercero, conn);
+                    //cmdTercero.Parameters.Add("@tercero", SqlDbType.Int).Value = _idTercero;
+                    //SqlDataReader rdtercero = cmdTercero.ExecuteReader();
+                    //if (rdtercero.HasRows)
+                    //{
+                    //    rdtercero.Read();
+                    //    _tipoDocCliente = rdtercero.GetByte(0);
+                    //    _numDocCliente = rdtercero.GetString(1);
+                    //    _razonSocial = rdtercero.GetString(2);
+                    //    _idNaturaleza = rdtercero.GetInt16(3);
+                    //}
+                    //                    string qryDatosCliente1 = @"SELECT IdLocalizaTipo,DesLocalizacion,B.nom_dipo,A.IdLugar,RIGHT(B.cod_dipo,5) FROM genTerceroLocaliza A
+                    //LEFT JOIN GEN_DIVI_POLI B ON A.IdLugar=B.IdLugar
+                    //WHERE IdTercero=@idTercero and IdLocalizaTipo IN (2,3)
+                    //ORDER BY IdLocalizaTipo";
+                    //                    SqlCommand cmdDatosCliente1 = new SqlCommand(qryDatosCliente1, conn);
+                    //                    cmdDatosCliente1.Parameters.Add("@idTercero", SqlDbType.Int).Value = _idTercero;
+                    //                    SqlDataReader rdDatosCliente1 = cmdDatosCliente1.ExecuteReader();
+                    //                    if (rdDatosCliente1.HasRows)
+                    //                    {
+                    //                        while (rdDatosCliente1.Read())
+                    //                        {
+                    //                            if (rdDatosCliente1.GetInt32(0) == 2)
+                    //                            {
+                    //                                _direccionCliente = rdDatosCliente1.GetString(1);
+                    //                                _municipioCliente = rdDatosCliente1.GetString(4);
+                    //                                _localizacionCliente = rdDatosCliente1.GetInt32(3);
+                    //                            }
+                    //                            else if (rdDatosCliente1.GetInt32(0) == 3)
+                    //                            {
+                    //                                if (rdDatosCliente1.GetString(1).Length>10)
+                    //                                {
+                    //                                    _telefonoCliente = rdDatosCliente1.GetString(1).Substring(0,10);
+                    //                                }
+                    //                                else
+                    //                                {
+                    //                                    _telefonoCliente = rdDatosCliente1.GetString(1);
+                    //                                }
+                    //                            }
+                    //                        }
+                    //                    }
+                    //                    string qryDatosCliente2 = @"SELECT COD_DEPTO,COD_MPIO,DPTO,NOM_MPIO FROM GEN_DIVI_POLI A
+                    //                    INNER JOIN HUSI_Divipola HB ON a.num_ptel=COD_DEPTO
+                    //                    WHERE a.IdLugar=@idLugar";
+                    //                    SqlCommand cmdDatosCliente2 = new SqlCommand(qryDatosCliente2, conn);
+                    //                    cmdDatosCliente2.Parameters.Add("@idLugar", SqlDbType.Int).Value = _localizacionCliente;
+                    //                    SqlDataReader rdDatosCliente2 = cmdDatosCliente2.ExecuteReader();
+                    //                    if (rdDatosCliente2.HasRows)
+                    //                    {
+                    //                        rdDatosCliente2.Read();
+                    //                        _departamento = rdDatosCliente2.GetString(2);
+                    //                    }
+                    //                    string qryDatosCliente3 = @"SELECT A.Correo FROM concontratocorreo A
+                    //INNER JOIN facFactura B ON A.IdContrato=B.IdContrato
+                    //WHERE A.indhabilitado=1 AND B.idFactura=@idFactura
+                    //UNION ALL
+                    //SELECT A.Deslocalizacion As Correo FROM gentercerolocaliza A
+                    //INNER JOIN conContrato C ON C.IdTercero=A.IdTercero
+                    //INNER JOIN  facFactura D ON D.IdContrato=C.IdContrato
+                    //LEFT JOIN concontratocorreo B ON  B.indhabilitado=1 and B.idcontrato=D.IdContrato  
+                    //WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.IdFactura=@idFactura";
+                    //                    SqlCommand cmdDatosCliente3 = new SqlCommand(qryDatosCliente3, conn);
+                    //                    cmdDatosCliente3.Parameters.Add("@idFactura", SqlDbType.Int).Value = _facturaRelacionada;
+                    //                    SqlDataReader rdDatosCliente3 = cmdDatosCliente3.ExecuteReader();
+                    //                    if (rdDatosCliente3.HasRows)
+                    //                    {
+                    //                        rdDatosCliente3.Read();
+                    //                        _correoCliente = rdDatosCliente3.GetString(0);
+                    //                    }
+                    //                    else
+                    //                    {
+                    //                        _correoCliente = "";
+                    //                    } 
+                    #endregion
+                }
+                Adquiriente adquirienteTmp = new Adquiriente();
+                adquirienteTmp.identificacion = cliente.NroDoc_Cliente;
+                if (cliente.TipoDoc_Cliente == 1)//TODO: validar la Homologacion para este campo
+                {
+                    adquirienteTmp.tipoIdentificacion = 31;
+                }
+                else if (cliente.TipoDoc_Cliente == 2)
+                {
+                    adquirienteTmp.tipoIdentificacion = 13;
+                }
+                adquirienteTmp.codigoInterno =cliente.IdTercero.ToString();
+                adquirienteTmp.razonSocial = cliente.NomTercero;
+                adquirienteTmp.nombreSucursal = cliente.NomTercero;
+                adquirienteTmp.correo = cliente.cuenta_correo;
+                adquirienteTmp.telefono = cliente.telefono;
 
+                using (SqlConnection connXX = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    connXX.Open();
+                    string qryTipoDocDian = "SELECT TipoDocDian FROM homologaTipoDocDian WHERE IdTipoDoc=@tipoDoc";
+                    SqlCommand cmdTipoDocDian = new SqlCommand(qryTipoDocDian, connXX);
+                    cmdTipoDocDian.Parameters.Add("@tipoDoc", SqlDbType.TinyInt).Value = cliente.TipoDoc_Cliente;
+                    Int16 tipoDoc = Int16.Parse(cmdTipoDocDian.ExecuteScalar().ToString());
+                    adquirienteTmp.tipoIdentificacion = byte.Parse(tipoDoc.ToString());
+                }
 
-					#region definiciones
-					eFactura notaEnviar = new eFactura();
-					AdditionalInformation itemInfAdicionalEnc = new AdditionalInformation();
-					List<AdditionalInformation> InformacionAdicionalEn = new List<AdditionalInformation>();
-					Data objData = new Data
-					{
-						UrlPdf = urlPdfNotaDebito
-					};
+                if (cliente.idRegimen.Equals("C"))
+                {
+                    adquirienteTmp.tipoRegimen = "48";
+                }
+                else
+                {
+                    adquirienteTmp.tipoRegimen = "49";
+                }
+                //TODO: Aqui insertar lo que se defina de Responsabilidades  RUT documentoF2.adquiriente.responsabilidadesRUT
+                if (cliente.IdNaturaleza == 3)
+                {
+                    adquirienteTmp.tipoPersona = "1";
+                }
+                else if (cliente.IdNaturaleza == 4)
+                {
+                    adquirienteTmp.tipoPersona = "2";
+                }
+                else
+                {
+                    adquirienteTmp.tipoPersona = "0";
+                }
+                List<string> responsanbilidadesR = new List<string>();
+                responsanbilidadesR.Add("R-12-PJ");
+                adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
+                Ubicacion ubicacionCliente = new Ubicacion();
+                ubicacionCliente.pais = "CO";
+                ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
+                ubicacionCliente.direccion = cliente.direccion;
+                adquirienteTmp.ubicacion = ubicacionCliente;
+                documentoF2.adquiriente = adquirienteTmp;
+                #region MyRegion
 
-					OriginalRequest peticion = new OriginalRequest
-					{
-						EventName = "FAC-SYNC",
-						Currency = "COP",
-						DocumentType = "DebitNote",
-						BroadCastDate = DateTime.Now.ToString("yyyy-MM-dd"),
-						BroadCastTime = DateTime.Now.ToString("HH:mm:ss"),
-						IdMotivo = "1",
-						BillType = "1",
-						Prefix = "",
-						IdBusiness = "860015536",
-						InvoiceId = nroNotaDebito.ToString(),
-						//peticion.DocumentType = "01";
-						// TODO: Tener en cuenta si se van a incluir campos adicionales
-						AdditionalInformation = InformacionAdicionalEn
-					};
-					AccountingCustomerParty Cliente = new AccountingCustomerParty();
-					Address objDireccionHusi = new Address();
-					Address1 objDireccionCliente = new Address1();
-					TaxTotal ivaFactura = new TaxTotal();
-					TaxTotal ipoconsumoFactura = new TaxTotal();
-					TaxTotal icaFactura = new TaxTotal();
-					List<TaxTotal> impuestosFactura = new List<TaxTotal>();
-					LegalMonetaryTotal subtotalesFactura = new LegalMonetaryTotal();
+                #endregion
+                double TotalGravadoIva = 0;
+                //double TotalGravadoIca = 0;
+                //************************************************************ Detalle de Nota Debito   ***********************************************************
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    try
+                    {
+                        SqlCommand sqlValidaDet = new SqlCommand("spTraeDetalleNotas", conexion01);
+                        sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                        sqlValidaDet.Parameters.Add("@idNota", SqlDbType.Int).Value = nroNotaDebito;
+                        SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                        if (rdValidaDet.HasRows)
+                        {
+                            while (rdValidaDet.Read())
+                            {
+                                List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                                DetallesItem lineaProducto = new DetallesItem();
+                                lineaProducto.tipoDetalle = 1; // Linea Normal
+                                string codigoProducto = rdValidaDet.GetString(0);
+                                lineaProducto.valorCodigoInterno = codigoProducto;
 
-					LineExtensionAmount lineaExtCant = new LineExtensionAmount();
-					TaxExclusiveAmount totalImpuesto = new TaxExclusiveAmount();
-					PayableAmount totalPagar = new PayableAmount();
+                                lineaProducto.codigoEstandar = "999";
+                                lineaProducto.valorCodigoEstandar = codigoProducto;
+                                lineaProducto.descripcion = rdValidaDet.GetString(1);
 
-					Contract contrato = new Contract();
-					Party datosHospital = new Party();
-					Party1 datosCliente = new Party1();
-					PhysicalLocation ubicacionFisicaHusi = new PhysicalLocation();
-					PhysicalLocation1 ubicacionFisicaCliente = new PhysicalLocation1();
-					PartyTaxScheme RegimenImpuesto = new PartyTaxScheme();
-					PartyTaxScheme RegimenCliente = new PartyTaxScheme();
-					PartyIdentification idenHusi = new PartyIdentification();
-					PartyIdentification idenCliente = new PartyIdentification();
-					Person repLegalHusi = new Person();
-					Person1 repLegalCliente = new Person1();
-					//********** Definicion Elementos del Detalle de Factura
-					List<DocumentLine> detalleProductos = new List<DocumentLine>();
-					SubDetalle subDetProducto = new SubDetalle();
-					TaxAmount taxIVA = new TaxAmount();
-					TaxAmount taxCONSUMO = new TaxAmount();
-					TaxAmount taxICA = new TaxAmount();
-					TaxableAmount camposAdicionalesICA = new TaxableAmount();
-					#endregion
-					//********** Fin Definicion de Detalle de Factura
-					//contrato.ID = _idContrato.ToString();
-					//contrato.IssueDate = _FecFactura.ToString("yyyy-MM-dd");
-					//contrato.ContractType = "1";
+                                lineaProducto.unidades = double.Parse(rdValidaDet.GetInt32(2).ToString());
+                                lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
+                                lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
+                                lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
+                                lineaProducto.valorBrutoMoneda = monedaNota;
 
-					// datosHUSI.Contract = contrato;
-					//**********
-					//   datosHUSI.AdditionalAccountID = "1";
-					#region defHospital
-					datosHospital.Name = "Hospital Universitario San Ignacio";
-					idenHusi.ID = "860015536";
-					idenHusi.SchemeID = "31";
-					datosHospital.PartyIdentification = idenHusi;
+                                TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                                tributosWRKIva.id = "01";
+                                tributosWRKIva.nombre = "Iva";
+                                tributosWRKIva.esImpuesto = true;
+                                tributosWRKIva.porcentaje = 0;
+                                tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
+                                tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
+                                TotalGravadoIva = TotalGravadoIva + double.Parse(_Valtotal.ToString());
+                                tributosWRKIva.tributoFijoUnidades = 0;
+                                tributosWRKIva.tributoFijoValorImporte = 0;
+                                listaTributos.Add(tributosWRKIva);
 
-					objDireccionHusi.Line = "Kra 7 No. 40-62";
-					objDireccionHusi.CityName = "Bogota D.C";
-					objDireccionHusi.CountryCode = "57";
-					objDireccionHusi.Department = "Cundinamarca";
+                                lineaProducto.tributos = listaTributos;
 
-					ubicacionFisicaHusi.Address = objDireccionHusi;
-					datosHospital.PhysicalLocation = ubicacionFisicaHusi;
+                                detalleProductos.Add(lineaProducto);
+                            }
 
-					repLegalHusi.FirstName = "JULIO";
-					repLegalHusi.MiddleName = "CESAR";
-					repLegalHusi.FamilyName = "CASTELLANOS RAMIREZ";
-
-					datosHospital.Person = repLegalHusi;
-
-					RegimenImpuesto.TaxLevelCode = "2";
-					datosHospital.PartyTaxScheme = RegimenImpuesto;
-
-					//  datosHUSI.Party = datosHospital;
-					#endregion
-					//****************** CLIENTE
-					#region defCliente
-					//  Variables Inicializacion
-					string _direccionCliente = string.Empty;
-					string _telefonoCliente = string.Empty;
-					string _municipioCliente = string.Empty;
-					string _departamento = string.Empty;
-					int _localizacionCliente = 0;
-					string _correoCliente = string.Empty;
-					//**** 
-					using (SqlConnection connx = new SqlConnection(Properties.Settings.Default.DBConexion))
-					{     // Informacion General
-						connx.Open();
-						string qryDatosCliente1 = @"SELECT IdLocalizaTipo,DesLocalizacion,B.nom_dipo,A.IdLugar FROM genTerceroLocaliza A
-LEFT JOIN GEN_DIVI_POLI B ON A.IdLugar=B.IdLugar
-WHERE IdTercero=@idTercero and IdLocalizaTipo IN (2,3)
-ORDER BY IdLocalizaTipo";
-						SqlCommand cmdDatosCliente1 = new SqlCommand(qryDatosCliente1, connx);
-						cmdDatosCliente1.Parameters.Add("@idTercero", SqlDbType.Int).Value = _idTercero;
-						SqlDataReader rdDatosCliente1 = cmdDatosCliente1.ExecuteReader();
-						if (rdDatosCliente1.HasRows)
-						{
-							while (rdDatosCliente1.Read())
-							{
-								if (rdDatosCliente1.GetInt32(0) == 2)
-								{
-									_direccionCliente = rdDatosCliente1.GetString(1);
-									_municipioCliente = rdDatosCliente1.GetString(2);
-									_localizacionCliente = rdDatosCliente1.GetInt32(3);
-								}
-								else if (rdDatosCliente1.GetInt32(0) == 3)
-								{
-									_telefonoCliente = rdDatosCliente1.GetString(1);
-								}
-							}
-						}
-
-						string qryDatosCliente2 = @"SELECT COD_DEPTO,COD_MPIO,DPTO,NOM_MPIO FROM GEN_DIVI_POLI A
-                    INNER JOIN HUSI_Divipola HB ON a.num_ptel=COD_DEPTO
-                    WHERE a.IdLugar=@idLugar";
-						SqlCommand cmdDatosCliente2 = new SqlCommand(qryDatosCliente2, connx);
-						cmdDatosCliente2.Parameters.Add("@idLugar", SqlDbType.Int).Value = _localizacionCliente;
-						SqlDataReader rdDatosCliente2 = cmdDatosCliente2.ExecuteReader();
-						if (rdDatosCliente2.HasRows)
-						{
-							rdDatosCliente2.Read();
-							_departamento = rdDatosCliente2.GetString(2);
-						}
-
-						string qryDatosCliente3 = @"SELECT A.Correo FROM concontratocorreo A
-INNER JOIN facFactura B ON A.IdContrato=B.IdContrato
-WHERE A.indhabilitado=1 AND B.idFactura=@idFactura
-UNION ALL
-SELECT A.Deslocalizacion As Correo FROM gentercerolocaliza A
-INNER JOIN conContrato C ON C.IdTercero=A.IdTercero
-INNER JOIN  facFactura D ON D.IdContrato=C.IdContrato
-LEFT JOIN concontratocorreo B ON  B.indhabilitado=1 and B.idcontrato=D.IdContrato  
-WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.IdFactura=@idFactura";
-						SqlCommand cmdDatosCliente3 = new SqlCommand(qryDatosCliente3, connx);
-						cmdDatosCliente3.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroNotaDebito;
-						SqlDataReader rdDatosCliente3 = cmdDatosCliente3.ExecuteReader();
-						if (rdDatosCliente3.HasRows)
-						{
-							rdDatosCliente3.Read();
-							_correoCliente = rdDatosCliente3.GetString(0);
-						}
-
-					}
-					idenCliente.SchemeID = "31";
-					idenCliente.ID = _numDocCliente;
-					datosCliente.PartyIdentification = idenCliente;
-					datosCliente.Name = _razonSocial;
-					objDireccionCliente.Line = _direccionCliente;
-					objDireccionCliente.CityName = _municipioCliente;
-					objDireccionCliente.CountryCode = "CO";
-					objDireccionCliente.CitySubdivisionName = ""; //TODO: De Donde  Se obtiene de la Base de Datos. Especificidad en la direccion(Barrio, Edifico etc)
-					objDireccionCliente.Department = _departamento;
-					ubicacionFisicaCliente.Address = objDireccionCliente;
-					datosCliente.PhysicalLocation = ubicacionFisicaCliente;
-					if (_naturalezaCliente == 3)
-					{
-						RegimenCliente.TaxLevelCode = "2";
-						Cliente.AdditionalAccountID = "1"; //TODO: Tipo de contribuyente. Buscar en SAHI
-					}
-					else
-					{
-						RegimenCliente.TaxLevelCode = "0";
-						Cliente.AdditionalAccountID = "2"; //TODO: Tipo de contribuyente. Buscar en SAHI
-					}
-					string qryConsulta = @"SELECT con.IdContrato,con.IdTercero,con.NomRepComercial FROM conContrato con
-INNER JOIN admAtencionContrato admC ON con.IdContrato = admC.IdContrato
-WHERE admC.IdAtencion =@idAtencion";
-					SqlCommand cmdConsulta = new SqlCommand(qryConsulta, conn);
-					cmdConsulta.Parameters.Add("@idAtencion", SqlDbType.Int).Value = nroAtencion;
-					SqlDataReader rdConsulta = cmdConsulta.ExecuteReader();
-					if (rdConsulta.HasRows)
-					{
-						rdConsulta.Read();
-						_repLegal = rdConsulta.GetString(2);
-					}
-					else
-					{
-						_repLegal = _razonSocial;
-					}
-					datosCliente.PartyTaxScheme = RegimenCliente;
-					string primerNombre = string.Empty;
-					string segundoNombre = string.Empty;
-					string Apellidos = string.Empty;
-					if (_repLegal.Length > 1)
-					{
-						string[] nombreRepresentante = _repLegal.Split(' ');
-						if (nombreRepresentante.Length == 2)
-						{
-							primerNombre = nombreRepresentante[0];
-							segundoNombre = " ";
-							Apellidos = nombreRepresentante[1];
-						}
-						else if (nombreRepresentante.Length > 2)
-						{
-							primerNombre = nombreRepresentante[0];
-							segundoNombre = nombreRepresentante[1];
-						}
-						Apellidos = nombreRepresentante[2];
-						if (nombreRepresentante.Length > 3)
-						{
-							Apellidos = Apellidos + nombreRepresentante[3];
-						}
-					}
-					repLegalCliente.FirstName = _razonSocial;
-					repLegalCliente.MiddleName = " ";
-					repLegalCliente.FamilyName = " ";
-					repLegalCliente.Telephone = " ";
-					repLegalCliente.Email = _correoCliente;
-
-					//Cliente.Party.PartyTaxScheme.TaxLevelCode = "2"; // Regimen Comun;
-					datosCliente.Person = repLegalCliente;
-					Cliente.Party = datosCliente;
-					#endregion
-
-					#region impuesto
-					ivaFactura.ID = "01";
-					taxIVA.Amount = 0;
-					//taxIVA.Currency = "COP";
-					ivaFactura.TaxAmount = taxIVA;
-					ivaFactura.TaxEvidenceIndicator = "true";
-
-					ipoconsumoFactura.ID = "02";
-					taxCONSUMO.Amount = 0;
-					//taxCONSUMO.Currency = "COP";
-					ipoconsumoFactura.TaxAmount = taxCONSUMO;
-					ipoconsumoFactura.TaxEvidenceIndicator = "true";
-
-					icaFactura.ID = "03";
-					taxICA.Amount = 0;
-					//taxICA.Currency = "COP";
-					icaFactura.TaxAmount = taxICA;
-					icaFactura.TaxEvidenceIndicator = "true";
-					camposAdicionalesICA.Amount = _Valtotal.TomarDecimales(2);
-					icaFactura.TaxableAmount = camposAdicionalesICA;
-					icaFactura.Percent = 0;
-
-					impuestosFactura.Add(ivaFactura);
-					impuestosFactura.Add(ipoconsumoFactura);
-					impuestosFactura.Add(icaFactura);
-					// Queda pendiente Definir el porque de los campos adicionales en la documentacion del Servicio.
-					lineaExtCant.Amount = _ValCobrar.TomarDecimales(2);
-					lineaExtCant.Currency = "COP";
-					subtotalesFactura.LineExtensionAmount = lineaExtCant;
-					// aqui va el TaxExclusiveAmount
-
-					totalImpuesto.Amount = _Valtotal.TomarDecimales(2); //Total Base Imponible (Importe Bruto + Cargos- Descuentos): Base imponible para el cálculo de los impuestos. Todos los impuestos los calculan sobre una misma base???
-					totalImpuesto.Currency = "COP";
-					subtotalesFactura.TaxExclusiveAmount = totalImpuesto;
-					Decimal totalFacturapago = _Valtotal + _ValImpuesto.TomarDecimales(2) - _ValPagos.TomarDecimales(2);
-					totalPagar.Amount = totalFacturapago.TomarDecimales(2);
-					totalPagar.Currency = "COP";
-					subtotalesFactura.PayableAmount = totalPagar;
-					#endregion
-					//************************************************************ Detalle de Nota Credito   ***********************************************************
-					using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
-					{
-						conexion01.Open();
-						try
-						{
-							string qryTipoNota = @"SELECT IdMovimiento,NumDocumento,DesMovimiento,b.IdTipoHomologoDian from cxccarteramovi a
+                        }
+                        else
+                        {
+                            string qryTipoNota = @"SELECT IdMovimiento,NumDocumento,DesMovimiento,b.IdTipoHomologoDian from cxccarteramovi a
 inner join CXCTIPOMOVIMIENTOEFECTONOTAS b on a.idtipomovimiento=b.idtipomovimiento and b.indhabilitado=1
 WHERE a.IdMovimiento=@idMovimiento";
-							SqlCommand cmdTipoNota = new SqlCommand(qryTipoNota, conexion01);
-							cmdTipoNota.Parameters.Add("@idMovimiento", SqlDbType.Int).Value = _idMovimiento;
-							SqlDataReader rdTipoNota = cmdTipoNota.ExecuteReader();
-							rdTipoNota.Read();
-							string DescNota = rdTipoNota.GetString(2);
+                            SqlCommand cmdTipoNota = new SqlCommand(qryTipoNota, conexion01);
+                            cmdTipoNota.Parameters.Add("@idMovimiento", SqlDbType.Int).Value = _idMovimiento;
+                            SqlDataReader rdDetalleFac = cmdTipoNota.ExecuteReader();
+                            if (rdDetalleFac.HasRows)
+                            {
+                                rdDetalleFac.Read();
+                                DescNota = rdDetalleFac.GetString(2);
 
-							DocumentLine lineaProducto = new DocumentLine();
-							LineExtensionAmount extencionLinea = new LineExtensionAmount();
-							Item itemLinea = new Item();
-							Price precioProd = new Price();
-							List<TaxLine> impuestoProducto = new List<TaxLine>();
-							TaxLine ivaProducto = new TaxLine();
-							TaxLine ipoconsumoProducto = new TaxLine();
+                                DetallesItem lineaProducto = new DetallesItem();
+                                lineaProducto.tipoDetalle = 1; // Linea Normal
+                                string codigoProducto = "ND1";
+                                lineaProducto.valorCodigoInterno = codigoProducto;
+
+                                lineaProducto.codigoEstandar = "999";
+                                lineaProducto.valorCodigoEstandar = codigoProducto;
+                                lineaProducto.descripcion = DescNota;
+
+                                lineaProducto.unidades = 1;// double.Parse(rdValidaDet.GetInt32(2).ToString());
+                                lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
+                                lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
+                                lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
+                                lineaProducto.valorBrutoMoneda = "COP";
+
+                                detalleProductos.Add(lineaProducto);
+
+                            }
+
+                        }
+                        #region MyRegion_01
+                        //                        string qryTipoNota = @"SELECT IdMovimiento,NumDocumento,DesMovimiento,b.IdTipoHomologoDian from cxccarteramovi a
+                        //inner join CXCTIPOMOVIMIENTOEFECTONOTAS b on a.idtipomovimiento=b.idtipomovimiento and b.indhabilitado=1
+                        //WHERE a.IdMovimiento=@idMovimiento";
+                        //                        SqlCommand cmdTipoNota = new SqlCommand(qryTipoNota, conexion01);
+                        //                        cmdTipoNota.Parameters.Add("@idMovimiento", SqlDbType.Int).Value = _idMovimiento;
+                        //                        SqlDataReader rdDetalleFac = cmdTipoNota.ExecuteReader();
+                        //                        rdDetalleFac.Read();
+                        //                        string DescNota = rdDetalleFac.GetString(2);
+                        //                        try
+                        //                        {
+                        //                            List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                        //                            DetallesItem lineaProducto = new DetallesItem();
+                        //                            lineaProducto.tipoDetalle = 1; // Linea Normal
+                        //                            string codigoProducto = rdDetalleFac.GetString(1);
+                        //                            lineaProducto.valorCodigoInterno = codigoProducto;
+                        //                            if (rdDetalleFac.GetInt16(18) == 5 || rdDetalleFac.GetInt16(18) == 6)
+                        //                            {
+                        //                                lineaProducto.codigoEstandar = "999";
+                        //                            }
+                        //                            else
+                        //                            {
+                        //                                lineaProducto.codigoEstandar = "999";
+                        //                            }
+                        //                            lineaProducto.valorCodigoEstandar = codigoProducto;
+                        //                            lineaProducto.descripcion = rdDetalleFac.GetString(2);
+
+                        //                            lineaProducto.unidades = 1;
+                        //                            lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
+                        //                            lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
+                        //                            lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
+                        //                            lineaProducto.valorBrutoMoneda = "COP";
+
+                        //                            TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                        //                            tributosWRKIva.id = "01";
+                        //                            tributosWRKIva.nombre = "Iva";
+                        //                            tributosWRKIva.esImpuesto = true;
+                        //                            tributosWRKIva.porcentaje = 0;
+                        //                            tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
+                        //                            tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
+                        //                            TotalGravadoIva = TotalGravadoIva + double.Parse(_Valtotal.ToString());
+                        //                            tributosWRKIva.tributoFijoUnidades = 0;
+                        //                            tributosWRKIva.tributoFijoValorImporte = 0;
+                        //                            listaTributos.Add(tributosWRKIva);
+
+                        //                            lineaProducto.tributos = listaTributos;
+
+                        //                            detalleProductos.Add(lineaProducto);
+
+                        //                        }
+                        //                        catch (Exception sqlExp)
+                        //                        {
+                        //                            string error = sqlExp.Message + "   " + sqlExp.StackTrace;
+                        //                            throw;
+                        //                        }
+                        //                        //**** fin de Modificacion 
+                        #endregion
+                    }
+                    catch (Exception sqlExp)
+                    {
+                        string error = sqlExp.Message + "   " + sqlExp.StackTrace;
+                        throw;
+                    }
+                }
+                string ObservacionesNota = string.Empty;
+                using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conn.Open();
+                    string qryObservaciones = @"SELECT Top 1 isnull(b.NomCausal, A.DesMovimiento) Observacion FROM cxcCarteraMovi A
+LEFT JOIN genCausal B ON A.IdCausal = B.IdCausal
+WHERE IdMovimiento = @idMovimiento";
+                    using (SqlCommand cmdObservaciones = new SqlCommand(qryObservaciones, conn))
+                    {
+                        cmdObservaciones.Parameters.Add("@idMovimiento", SqlDbType.Int).Value = _idMovimiento;
+                        SqlDataReader rdObservaciones = cmdObservaciones.ExecuteReader();
+                        if (rdObservaciones.HasRows)
+                        {
+                            rdObservaciones.Read();
+                            ObservacionesNota = rdObservaciones.GetString(0);
+                        }
+                        else
+                        {
+                            ObservacionesNota = $"Nota Debito Por Concepto de Cambio de Valor Factura{nroFactura} ";
+                        }
+                    }
+                }
+                DocumentosAfectadosItem itemAfectado = new DocumentosAfectadosItem();
+                itemAfectado.numeroDocumento = $"{Properties.Settings.Default.Prefijo}-{_facturaRelacionada.ToString()}";//todo: Ingresar el nro de Factura o Nota;
+                itemAfectado.UUID = codCufeFactura; //todo:Ingresar el UUID del Docuemtno afectado
+                itemAfectado.codigoCausal = 3;
+                //itemAfectado.fecha = formatosFecha.formatofecha(DateTime.Now); //todo: registrar fechz de la factura o Nota afectada
+                List<string> observaciones = new List<string>();
+                observaciones.Add(ObservacionesNota);
+                itemAfectado.observaciones = observaciones;
+                List<DocumentosAfectadosItem> DocumentosAfectados = new List<DocumentosAfectadosItem>();
+                DocumentosAfectados.Add(itemAfectado);
+                NotaDebitoEnviar.documentosAfectados = DocumentosAfectados;
+
+                documentoF2.detalles = detalleProductos;
+                List<TributosItem> tributosTMP = new List<TributosItem>();
+                List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
+                DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
+                {
+                    valorImporte = 0,
+                    valorBase = TotalGravadoIva,
+                    porcentaje = 0
+                };
+                tributosDetalle.Add(detalleTributos);
+                TributosItem itemTributo = new TributosItem()
+                {
+                    id = "01", //Total de Iva 
+                    nombre = "Iva",
+                    esImpuesto = true,
+                    valorImporteTotal = 0,
+                    detalles = tributosDetalle // DEtalle de los Ivas
+                };
+                tributosTMP.Add(itemTributo);
+                documentoF2.tributos = tributosTMP;
+                ///<summary>
+                ///Inicio de Totales de la Factura
+                /// </summary>
+                Totales totalesTmp = new Totales()
+                {
+                    valorBruto = double.Parse(_Valtotal.ToString()),
+                    valorAnticipos = double.Parse(_ValPagos.ToString()),
+                    valorTotalSinImpuestos = TotalGravadoIva,
+                    valorTotalConImpuestos = double.Parse(_Valtotal.ToString()),// + double.Parse(_ValImpuesto.ToString()),
+                    valorNeto = double.Parse(_Valtotal.ToString())
+                };
+                documentoF2.totales = totalesTmp;
+                logFacturas.Info("Numero de Productos Procesados, para JSon:" + detalleProductos.Count);
+
+                try
+                {
+                    #region MyRegionAnterior
+                    //string urlConsumo = Properties.Settings.Default.urlFacturaElectronica + Properties.Settings.Default.recursoFacturaE;
+                    //logFacturas.Info("URL de Request:" + urlConsumo);
+                    //HttpWebRequest request = WebRequest.Create(urlConsumo) as HttpWebRequest;
+                    //request.Timeout = 60 * 1000;
+                    //string facturaJson = JsonConvert.SerializeObject(notaEnviar);
+                    //logFacturas.Info("Json de la Nota Debito:" + facturaJson);
+                    //request.Method = "POST";
+                    //request.ContentType = "application/json";
+                    //string Usuario = "admin";
+                    //string Clave = "super";
+                    //string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
+                    //request.Headers.Add("Authorization", "Basic " + credenciales);
+
+                    //Byte[] data = Encoding.UTF8.GetBytes(facturaJson);
+
+                    //Stream st = request.GetRequestStream();
+                    //st.Write(data, 0, data.Length);
+                    //st.Close();
+
+                    //int loop1, loop2;
+                    //NameValueCollection valores;
+                    //valores = request.Headers;
+
+                    //// Pone todos los nombres en un Arregle
+                    //string[] arr1 = valores.AllKeys;
+                    //for (loop1 = 0; loop1 < arr1.Length; loop1++)
+                    //{
+                    //    logFacturas.Info("Key: " + arr1[loop1] + "<br>");
+                    //    // Todos los valores
+                    //    string[] arr2 = valores.GetValues(arr1[loop1]);
+                    //    for (loop2 = 0; loop2 < arr2.Length; loop2++)
+                    //    {
+                    //        logFacturas.Info("Value " + loop2 + ": " + arr2[loop2]);
+                    //    }
+                    //}
+                    //HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+                    //StreamReader sr = new StreamReader(response.GetResponseStream());
+                    //string strsb = sr.ReadToEnd();
+                    //object objResponse = JsonConvert.DeserializeObject(strsb);//, JSONResponseType);
+                    //logFacturas.Info("Respuesta Transfiriendo:" + strsb);
+                    //string valorRpta = "00";
+                    //string validacion = "\"PDF\":";
+                    //string validacionError = "\"Errors\":";
+                    //if (strsb.Contains(validacion))
+                    //{
+                    //    respuestaEntregaExitosa rptaEntrega = JsonConvert.DeserializeObject<respuestaEntregaExitosa>(strsb);
+                    //    logFacturas.Info("PDF:" + rptaEntrega.Resultado.URLPDF);
+                    //    logFacturas.Info("XML:" + rptaEntrega.Resultado.URLXML);
+                    //    logFacturas.Info("CUFE:" + rptaEntrega.Resultado.UUID);
+                    //    if (rptaEntrega.EsExitoso)
+                    //    {
+                    //        using (SqlConnection conn2 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                    //        {
+                    //            conn2.Open();
+                    //            string strActualiza = @"UPDATE dbo.facNotaTempWEBService SET identificador=@identificador WHERE IdNota=@nroNota AND IdTipoNota=@idTipoNota";
+                    //            SqlCommand cmdActualiza = new SqlCommand(strActualiza, conn);
+                    //            cmdActualiza.Parameters.Add("@identificador", SqlDbType.VarChar).Value = rptaEntrega.Identificador;
+                    //            cmdActualiza.Parameters.Add("@nroNota", SqlDbType.Int).Value = nroNotaDebito;
+                    //            cmdActualiza.Parameters.Add("@idTipoNota", SqlDbType.VarChar).Value = "ND";
+                    //            if (cmdActualiza.ExecuteNonQuery() > 0)
+                    //            {
+                    //                logFacturas.Info("Nota Debito Actualizada en facNotaTempWEBService");
+                    //                using (WebClient webClient = new WebClient())
+                    //                {
+                    //                    try
+                    //                    {
+
+                    //                        System.Threading.Thread.Sleep(1000);
+                    //                        string[] arregloPDF = rptaEntrega.Resultado.URLPDF.Split('/');
+                    //                        string nombreArchivo = arregloPDF[arregloPDF.Length - 1];
+                    //****************************************************************
+                    //                        string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + nombreArchivo + ".pdf";
+                    //                        webClient.DownloadFile(rptaEntrega.Resultado.URLPDF, carpetaDescarga);
+                    //                        //System.Threading.Thread.Sleep(1000);
+                    //                        carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + rptaEntrega.Resultado.UUID + ".zip";
+                    //                        webClient.DownloadFile(rptaEntrega.Resultado.URLXML, carpetaDescarga);
+                    //                        //webClient.DownloadFile(rptaEntrega.Resultado.ZIP, @"D:\NotaDebitoQR\" + DateTime.Now.Year + @"\" + rptaEntrega.Resultado.CUFE + ".zip");
+                    //                        using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                    //                        {
+                    //                            conn3.Open();
+                    //                            string qryActualizaTempWEBService = @"UPDATE dbo.facNotaTempWEBService SET CodCUFE=@cufe,cadenaQR=@cadenaQR WHERE identificador=@identificador";
+                    //                            SqlCommand cmdActualizaTempWEBService = new SqlCommand(qryActualizaTempWEBService, conn);
+                    //                            cmdActualizaTempWEBService.Parameters.Add("@cufe", SqlDbType.VarChar).Value = nombreArchivo;
+                    //                            cmdActualizaTempWEBService.Parameters.Add("@cadenaQR", SqlDbType.NVarChar).Value = rptaEntrega.Resultado.QR;
+                    //                            cmdActualizaTempWEBService.Parameters.Add("@identificador", SqlDbType.VarChar).Value = rptaEntrega.Identificador;
+                    //                            if (cmdActualizaTempWEBService.ExecuteNonQuery() > 0)
+                    //                            {
+                    //                                logFacturas.Info("Descarga Existosa de Archivos de la Nota Debito con Identificadotr:" + rptaEntrega.Identificador + "    Destino:" + carpetaDescarga);
+                    //                                valorRpta = nroNotaDebito.ToString();
+                    //                            }
+                    //                            else
+                    //                            {
+                    //                                logFacturas.Info("No fue Posible realizar la Actualizacion de la Tabla facNotaTempWEBService de la Factura con Identificadotr:" + rptaEntrega.Identificador);
+                    //                            }
+                    //                        }
+                    //                    }
+                    //                    catch (NotSupportedException nSuppExp)
+                    //                    {
+                    //                        logFacturas.Info("Se ha presentado una NotSupportedException durante la descarga de los objetos de la Nota Debito:" + nSuppExp.Message + "     " + nSuppExp.InnerException.Message);
+                    //                        valorRpta = "9X";
+                    //                    }
+                    //                    catch (ArgumentNullException argNull)
+                    //                    {
+                    //                        logFacturas.Info("Se ha presentado una ArgumentNullException durante la descarga de los objetos de la Nota Debito:" + argNull.Message + "     " + argNull.InnerException.Message);
+                    //                        valorRpta = "9X";
+                    //                    }
+                    //                    catch (WebException webEx1)
+                    //                    {
+                    //                        logFacturas.Info("Se ha presentado una Falla durante la descarga de los objetos de la factura:" + webEx1.Message + "     " + webEx1.InnerException.Message);
+                    //                        valorRpta = "93";
+                    //                    }
+                    //                    catch (Exception exx)
+                    //                    {
+                    //                        logFacturas.Info("No fue posible descargar los archivos.PDF, ZIP,CUFE y QR  !!! Causa:" + exx.Message);
+                    //                        valorRpta = "98";
+                    //                    }
+
+                    //                }
+
+                    //            }
+                    //            else
+                    //            {
+                    //                logFacturas.Info("!!!   No fue posible Actualizar la Nota Debito en la Tabla: facNotaTempWEBService   !!!");
+                    //            }
+                    //        }
+                    //    }
+                    //    else
+                    //    {
+                    //        logFacturas.Info("!!!  La Recuperacion de Documentos de la Nota Debito, No fue posible. No se Actualiza la Factura en facNotaTempWEBService   !!!");
+                    //        logFacturas.Warn("la respuesta recibida:" + strsb);
+                    //        //**** aqui se debe insertar en la tabla de fallos
+
+                    //    }
+                    //}
+                    //else if (strsb.Contains(validacionError))
+                    //{
+                    //    respuestaEntregaError rptaEntregaErrores = JsonConvert.DeserializeObject<respuestaEntregaError>(strsb);
+                    //    logFacturas.Info("!!!  La Entrega de la factura No fue Existosa. No se Actualiza la Factura en facFacturaTempWEBService   !!!");
+                    //    logFacturas.Info("Errores:  Resultado:" + rptaEntregaErrores.Resultado);
+                    //    logFacturas.Info("Respuesta del Servicio" + strsb);
+                    //    valorRpta = "99";
+                    //}
+                    //return valorRpta;
+
+                    ////} 
+                    #endregion
+                    //string urlConsumo = Properties.Settings.Default.urlFacturaElectronica + Properties.Settings.Default.recursoFacturaE;
+                    string urlConsumo = Properties.Settings.Default.urlFacturaElectronica;// + Properties.Settings.Default.recursoFacturaE;
+                    logFacturas.Info("URL de Request:" + urlConsumo);
+                    HttpWebRequest request = WebRequest.Create(urlConsumo) as HttpWebRequest;
+                    //request.Timeout = 60 * 1000;
+
+                    documentoF2.documento = NotaDebitoEnviar;
+                    string NotaDebitoJson = JsonConvert.SerializeObject(documentoF2);
+                    logFacturas.Info("Json de la Nota Debito::" + NotaDebitoJson);
+                    request.Method = "POST";
+                    request.ContentType = "application/json";
+                    string Usuario = Properties.Settings.Default.usuario;
+                    string Clave = Properties.Settings.Default.clave;
+                    string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
+                    request.Headers.Add("Authorization", "Basic " + credenciales);
+
+                    Byte[] data = Encoding.UTF8.GetBytes(NotaDebitoJson);
+
+                    Stream st = request.GetRequestStream();
+                    st.Write(data, 0, data.Length);
+                    st.Close();
+
+                    int loop1, loop2;
+                    NameValueCollection valores;
+                    valores = request.Headers;
+
+                    // Pone todos los nombres en un Arreglo
+                    string[] arr1 = valores.AllKeys;
+                    for (loop1 = 0; loop1 < arr1.Length; loop1++)
+                    {
+                        logFacturas.Info("Key: " + arr1[loop1] + "<br>");
+                        // Todos los valores
+                        string[] arr2 = valores.GetValues(arr1[loop1]);
+                        for (loop2 = 0; loop2 < arr2.Length; loop2++)
+                        {
+                            logFacturas.Info("Value " + loop2 + ": " + arr2[loop2]);
+                        }
+                    }
+                    HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+                    logFacturas.Info("Codigo Status:" + response.StatusCode);
+                    logFacturas.Info("Descripcion Status:" + response.StatusDescription);
+                    StreamReader lectorDatos = new StreamReader(response.GetResponseStream());
+                    string datosRespuesta = lectorDatos.ReadToEnd();
+                    logFacturas.Info("Respuesta:" + datosRespuesta);
+                    string valorRpta = "00";
+                    RespuestaTransfiriendo respuesta = JsonConvert.DeserializeObject<RespuestaTransfiriendo>(datosRespuesta);
+                    if (respuesta.esExitoso)
+                    {
+                        logFacturas.Info($"PDF:{respuesta.resultado.URLPDF}");
+                        logFacturas.Info($"XML:{respuesta.resultado.URLXML}");
+                        logFacturas.Info($"UUID:{ respuesta.resultado.UUID}");
+                        logFacturas.Info($"QR:{respuesta.resultado.QR}");
+                        using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
+                        {
+                            conn.Open();
+                            string strActualiza = @"UPDATE dbo.facNotaTempWEBService SET identificador=@identificador WHERE IdNota=@nroNota AND IdTipoNota=@idTipoNota";
+                            SqlCommand cmdActualiza = new SqlCommand(strActualiza, conn);
+                            cmdActualiza.Parameters.Add("@identificador", SqlDbType.VarChar).Value = respuesta.resultado.UUID;
+                            cmdActualiza.Parameters.Add("@nroNota", SqlDbType.Int).Value = nroNotaDebito;
+                            cmdActualiza.Parameters.Add("@idTipoNota", SqlDbType.VarChar).Value = "ND";
+
+                            if (cmdActualiza.ExecuteNonQuery() > 0)
+                            {
+                                logFacturas.Info("Nota Debito Actualizada con UUID en facNotaTempWEBService");
+                                using (WebClient webClient = new WebClient())
+                                {
+                                    try
+                                    {
+                                        //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                        string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                        logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
+                                        webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                        //System.Threading.Thread.Sleep(1000);
+                                        logFacturas.Info($"Descarga de PDF Nota Debito...Terminada En:{carpetaDescarga}");
+                                        carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                        webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                        //System.Threading.Thread.Sleep(1000);
+                                        logFacturas.Info($"Descarga de XML...Terminada En:{carpetaDescarga}");
+                                        using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                                        {
+                                            conn3.Open();
+                                            string qryActualizaTempWEBService = @"UPDATE dbo.facNotaTempWEBService SET CodCUFE=@cufe,cadenaQR=@cadenaQR WHERE identificador=@identificador";
+                                            SqlCommand cmdActualizaTempWEBService = new SqlCommand(qryActualizaTempWEBService, conn3);
+                                            cmdActualizaTempWEBService.Parameters.Add("@cufe", SqlDbType.VarChar).Value = respuesta.resultado.UUID;
+                                            cmdActualizaTempWEBService.Parameters.Add("@cadenaQR", SqlDbType.NVarChar).Value = respuesta.resultado.QR;
+                                            cmdActualizaTempWEBService.Parameters.Add("@identificador", SqlDbType.VarChar).Value = respuesta.resultado.UUID;
+                                            if (cmdActualizaTempWEBService.ExecuteNonQuery() > 0)
+                                            {
+                                                logFacturas.Info("Descarga Existosa de Archivos de la Nota Debito con Identificadotr:" + respuesta.resultado.UUID + " Destino:" + carpetaDescarga);
+                                                if (!(respuesta.advertencias is null))
+                                                {
+                                                    string qryAdvertencia = @"INSERT INTO dbo.facNotaTempWSAdvertencias(IdNota,CodAdvertencia,FecRegistro,DescripcionAdv) 
+VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
+                                                    SqlCommand cmdInsertarAdvertencia = new SqlCommand(qryAdvertencia, conn3);
+                                                    cmdInsertarAdvertencia.Parameters.Add("@IdNota", SqlDbType.Int);
+                                                    cmdInsertarAdvertencia.Parameters.Add("@CodAdvertencia", SqlDbType.VarChar);
+                                                    cmdInsertarAdvertencia.Parameters.Add("@DescripcionAdv", SqlDbType.NVarChar);
+                                                    cmdInsertarAdvertencia.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
+                                                    foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
+                                                    {
+                                                        cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroNotaDebito;
+                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                        //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
+                                                        cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
+                                                        {
+                                                            logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");
+                                                            valorRpta = nroNotaDebito.ToString();
+                                                        }
+                                                        else
+                                                        {
+                                                            logFacturas.Info($"No es Posible Insertar Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");
+                                                            valorRpta = nroNotaDebito.ToString();
+                                                        }
+                                                    }
+                                                }
+                                                valorRpta = nroNotaDebito.ToString();
+                                            }
+                                            else
+                                            {
+                                                logFacturas.Info("No fue Posible Actualizar la tabla facNotaTempWEBService de la Nota Debito con UUID:" + respuesta.resultado.UUID);
+                                            }
+                                        }
+                                    }
+                                    catch (NotSupportedException nSuppExp)
+                                    {
+                                        logFacturas.Info("Se ha presentado una NotSupportedException durante la descarga de los objetos de la Factura:" + nSuppExp.Message + "     " + nSuppExp.InnerException.Message);
+                                        valorRpta = "9X";
+                                    }
+                                    catch (ArgumentNullException argNull)
+                                    {
+                                        logFacturas.Info("Se ha presentado una ArgumentNullException durante la descarga de los objetos de la Factura:" + argNull.Message + "     " + argNull.InnerException.Message);
+                                        valorRpta = "9X";
+                                    }
+                                    catch (WebException webEx1)
+                                    {
+                                        logFacturas.Info("Se ha presentado una Falla durante la descarga de los objetos de la factura:" + webEx1.Message + "     " + webEx1.InnerException.Message);
+                                        logFacturas.Warn($"Pila de Mensajes:::::{webEx1.StackTrace}");
+                                        valorRpta = "93";
+                                    }
+                                    catch (Exception exx)
+                                    {
+                                        logFacturas.Info("No fue posible descargar los archivos.PDF, XML y QR  !!! Causa:" + exx.Message);
+                                        valorRpta = "98";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                logFacturas.Info("!!!   No fue posible Actualizar la Factura en la Tabla: facFacturaTempWEBService   !!!");
+                            }
+                        }
+                    }
+                    else
+                    {
+
+                        using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
+                        {
+                            conn.Open();
+                            string qryInsertaError = @"INSERT INTO facNotaTempWEBServiceError (IdTipoNota,IdNota,CodError,DescripcionError,FecRegistro) 
+VALUES(@idTipo,@IdNota, @CodError, @DescripcionError, @FecRegistro)";
+                            SqlCommand cmdInsertarError = new SqlCommand(qryInsertaError, conn);
+                            cmdInsertarError.Parameters.AddWithValue("@idTipo", SqlDbType.VarChar).Value = "ND";
+                            cmdInsertarError.Parameters.Add("@IdNota", SqlDbType.Int).Value = nroNotaDebito;
+                            cmdInsertarError.Parameters.Add("@CodError", SqlDbType.VarChar).Value = respuesta.codigo;
+                            cmdInsertarError.Parameters.Add("@DescripcionError", SqlDbType.NVarChar).Value = respuesta.mensaje;
+                            cmdInsertarError.Parameters.Add("@FecRegistro", SqlDbType.DateTime).Value = DateTime.Parse(respuesta.fecha);
+                            if (cmdInsertarError.ExecuteNonQuery() > 0)
+                            {
+                                valorRpta = nroNotaDebito.ToString();
+                                string qryDetErr = @"INSERT INTO facNotaTempWSErrorDetalle (IdNota,CodError,consecutivo,FecRegistro,DescripcionError) 
+VALUES(@IdNota, @CodError, @consecutivo, @FecRegistro, @DescripcionError)";
+                                SqlCommand cmdDetErr = new SqlCommand(qryDetErr, conn);
+                                cmdDetErr.Parameters.Add("@IdNota", SqlDbType.Int);
+                                cmdDetErr.Parameters.Add("@CodError", SqlDbType.VarChar);
+                                cmdDetErr.Parameters.Add("@consecutivo", SqlDbType.Int);
+                                cmdDetErr.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
+                                cmdDetErr.Parameters.Add("@DescripcionError", SqlDbType.NVarChar);
+                                List<ErroresItem> listaErrores = new List<ErroresItem>();
+                                int consecutivo = 1;
+                                foreach (ErroresItem itemErr in respuesta.errores)
+                                {
+                                    cmdDetErr.Parameters["@IdNota"].Value = nroNotaDebito;
+                                    cmdDetErr.Parameters["@CodError"].Value = itemErr.codigo;
+                                    cmdDetErr.Parameters["@consecutivo"].Value = consecutivo;
+                                    cmdDetErr.Parameters["@FecRegistro"].Value = DateTime.Parse(respuesta.fecha);
+                                    cmdDetErr.Parameters["@DescripcionError"].Value = itemErr.mensaje;
+                                    if (cmdDetErr.ExecuteNonQuery() > 0)
+                                    {
+                                        logFacturas.Info($"Se Inserta Detalle de Errores Nota Debito:codigo{itemErr.codigo} Mensaje:{itemErr.mensaje}");
+                                        consecutivo++;
+                                    }
+                                    else
+                                    {
+                                        logFacturas.Info($"No es Posible Insertar Detalle de Errores Nota Debito: Codigo{itemErr.codigo} Mensaje:{itemErr.mensaje}");
+                                    }
+                                    consecutivo++;
+                                }
+                            }
+                            else
+                            {
+                                valorRpta = "99";
+                            }
+
+                        }
+                    }
+                    return valorRpta;
+                }
+                catch (WebException wExp01)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + wExp01.Message + " Pila de LLamados:" + wExp01.StackTrace);
+                    return "93";
+                }
+                catch (NotSupportedException nsExp01)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + nsExp01.Message + " Pila de LLamados:" + nsExp01.StackTrace);
+                    return "94";
+                }
+                catch (ProtocolViolationException pexp01)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + pexp01.Message + " Pila de LLamados:" + pexp01.StackTrace);
+                    return "95";
+                }
+                catch (InvalidOperationException inExp01)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + inExp01.Message + " Pila de LLamados:" + inExp01.StackTrace);
+                    return "96";
+
+                }
+                catch (HttpListenerException httpExp)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + httpExp.Message + " Pila de LLamados:" + httpExp.StackTrace);
+                    return "97";
+                }
+
+                catch (Exception e)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion:" + e.Message + " Pila de LLamados:" + e.StackTrace);
+                    return "98";
+                }
+                //}
+            }
+            catch (Exception ex1)
+            {
+                logFacturas.Warn("Se ha presentado una excepcion:" + ex1.Message + " Pila de LLamados:" + ex1.StackTrace);
+                return "98";
+            }
 
 
-							TaxAmount ivaTax = new TaxAmount();
-							TaxAmount ipoConsumoTax = new TaxAmount();
-							TaxLine lineaImpuestos = new TaxLine();
-
-							lineaProducto.TypeLine = 1; // Linea Normal
-							lineaProducto.ID = 1;
-							lineaProducto.InvoicedQuantity = 1;
-							Int32 cantidad = 1;
-							Int32 valor = Int32.Parse(_Valtotal.ToString());
-							Int32 totalProducto = cantidad * valor;
-							extencionLinea.Amount = totalProducto;
-							lineaProducto.LineExtensionAmount = extencionLinea;
-							itemLinea.Description = DescNota;
-							lineaProducto.Item = itemLinea;
-							precioProd.Amount = valor;
-							lineaProducto.Price = precioProd;
-
-							ivaProducto.ID = "01";
-							//ivaProducto.Percent = 0;
-							ivaTax.Amount = 0;
-							ivaTax.Currency = "COP";
-							ivaProducto.TaxAmount = ivaTax;
-							impuestoProducto.Add(ivaProducto);
-
-							//                                lineaProducto.TaxLine.Add(ivaProducto);
-
-							ipoconsumoProducto.ID = "02";
-							//ipoconsumoProducto.Percent = 0;
-							ipoConsumoTax.Amount = 0;
-							ipoConsumoTax.Currency = "COP";
-							ipoconsumoProducto.TaxAmount = ipoConsumoTax;
-							impuestoProducto.Add(ipoconsumoProducto);
-
-							lineaProducto.TaxLine = impuestoProducto;
-
-							detalleProductos.Add(lineaProducto);
-						}
-						catch (Exception sqlExp)
-						{
-							string error = sqlExp.Message + "   " + sqlExp.StackTrace;
-							throw;
-						}
-					}
-					peticion.AccountingCustomerParty = Cliente;
-					peticion.TaxTotal = impuestosFactura;
-					peticion.LegalMonetaryTotal = subtotalesFactura;
-					peticion.DocumentLines = detalleProductos;
-					objData.OriginalRequest = peticion;
-					notaEnviar.Data = objData;
-					try
-					{
-						string urlConsumo = Properties.Settings.Default.urlFacturaElectronica + Properties.Settings.Default.recursoFacturaE;
-						logFacturas.Info("URL de Request:" + urlConsumo);
-						HttpWebRequest request = WebRequest.Create(urlConsumo) as HttpWebRequest;
-						request.Timeout = 60 * 1000;
-						string facturaJson = JsonConvert.SerializeObject(notaEnviar);
-						logFacturas.Info("Json de la Nota Debito:" + facturaJson);
-						request.Method = "POST";
-						request.ContentType = "application/json";
-						string Usuario = "admin";
-						string Clave = "super";
-						string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
-						request.Headers.Add("Authorization", "Basic " + credenciales);
-
-						Byte[] data = Encoding.UTF8.GetBytes(facturaJson);
-
-						Stream st = request.GetRequestStream();
-						st.Write(data, 0, data.Length);
-						st.Close();
-
-						int loop1, loop2;
-						NameValueCollection valores;
-						valores = request.Headers;
-
-						// Pone todos los nombres en un Arregle
-						string[] arr1 = valores.AllKeys;
-						for (loop1 = 0; loop1 < arr1.Length; loop1++)
-						{
-							logFacturas.Info("Key: " + arr1[loop1] + "<br>");
-							// Todos los valores
-							string[] arr2 = valores.GetValues(arr1[loop1]);
-							for (loop2 = 0; loop2 < arr2.Length; loop2++)
-							{
-								logFacturas.Info("Value " + loop2 + ": " + arr2[loop2]);
-							}
-						}
-
-						HttpWebResponse response = request.GetResponse() as HttpWebResponse;
-						//if (response.StatusCode != HttpStatusCode.OK)
-						//{
-						//    logFacturas.Info(response.StatusCode.ToString());
-						//    throw new Exception();
-						//}
-						//else
-						//{
-						//    logFacturas.Info(response.StatusCode);
-						//    logFacturas.Info(response.StatusDescription);
-						//}
-
-						////Stream stream1 = response.GetResponseStream();
-						//logFacturas.Info("Codigo Status:" + response.StatusCode);
-						//logFacturas.Info("Descripcion Status:" + response.StatusDescription);
-						StreamReader sr = new StreamReader(response.GetResponseStream());
-						string strsb = sr.ReadToEnd();
-						object objResponse = JsonConvert.DeserializeObject(strsb);//, JSONResponseType);
-
-						//logFacturas.Info("Respuesta:" + strsb);
-						////////respuestaJson rptaEntrega = JsonConvert.DeserializeObject<respuestaJson>(strsb);
-						////////if (rptaEntrega.EsExitoso)
-						////////{
-						////////    using (SqlConnection conn2 = new SqlConnection(Properties.Settings.Default.DBConexion))
-						////////    {
-						////////        conn2.Open();
-						////////        string strActualiza = @"UPDATE dbo.facNotaTempWEBService SET identificador=@identificador WHERE IdNota=@nroNota AND IdTipoNota=@idTipoNota";
-						////////        SqlCommand cmdActualiza = new SqlCommand(strActualiza, conn);
-						////////        cmdActualiza.Parameters.Add("@identificador", SqlDbType.VarChar).Value = rptaEntrega.Identificador;
-						////////        cmdActualiza.Parameters.Add("@nroNota", SqlDbType.Int).Value = nroNotaDebito;
-						////////        cmdActualiza.Parameters.Add("@idTipoNota", SqlDbType.VarChar).Value = "NC";
-						////////        if (cmdActualiza.ExecuteNonQuery() > 0)
-						////////        {
-						////////            logFacturas.Info("Nota Debito Actualizada en facNotaTempWEBService");
-						////////        }
-						////////        else
-						////////        {
-						////////            logFacturas.Info("!!!   No fue posible Actualizar la Nota Debito en facNotaTempWEBService   !!!");
-						////////        }
-						////////    }
-						////////}
-						////////return nroNotaDebito.ToString();
-						//StreamReader sr = new StreamReader(response.GetResponseStream());
-						//string strsb = sr.ReadToEnd();
-						//                    object objResponse = JsonConvert.DeserializeObject(strsb);//, JSONResponseType);
-						logFacturas.Info("Respuesta Transfiriendo:" + strsb);
-						string valorRpta = "00";
-						string validacion = "\"PDF\":";
-						string validacionError = "\"Errors\":";
-						if (strsb.Contains(validacion))
-						{
-							respuestaEntregaExitosa rptaEntrega = JsonConvert.DeserializeObject<respuestaEntregaExitosa>(strsb);
-							logFacturas.Info("PDF:" + rptaEntrega.Resultado.PDF);
-							logFacturas.Info("XML:" + rptaEntrega.Resultado.ZIP);
-							logFacturas.Info("CUFE:" + rptaEntrega.Resultado.CUFE);
-							if (rptaEntrega.EsExitoso)
-							{
-								using (SqlConnection conn2 = new SqlConnection(Properties.Settings.Default.DBConexion))
-								{
-									conn2.Open();
-									string strActualiza = @"UPDATE dbo.facNotaTempWEBService SET identificador=@identificador WHERE IdNota=@nroNota AND IdTipoNota=@idTipoNota";
-									SqlCommand cmdActualiza = new SqlCommand(strActualiza, conn);
-									cmdActualiza.Parameters.Add("@identificador", SqlDbType.VarChar).Value = rptaEntrega.Identificador;
-									cmdActualiza.Parameters.Add("@nroNota", SqlDbType.Int).Value = nroNotaDebito;
-									cmdActualiza.Parameters.Add("@idTipoNota", SqlDbType.VarChar).Value = "ND";
-									if (cmdActualiza.ExecuteNonQuery() > 0)
-									{
-										logFacturas.Info("Nota Debito Actualizada en facNotaTempWEBService");
-										using (WebClient webClient = new WebClient())
-										{
-											try
-											{
-
-												System.Threading.Thread.Sleep(1000);
-												string[] arregloPDF = rptaEntrega.Resultado.PDF.Split('/');
-												string nombreArchivo = arregloPDF[arregloPDF.Length - 1];
-
-												string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + nombreArchivo + ".pdf";
-												webClient.DownloadFile(rptaEntrega.Resultado.PDF, carpetaDescarga);
-												//System.Threading.Thread.Sleep(1000);
-												carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + rptaEntrega.Resultado.CUFE + ".zip";
-												webClient.DownloadFile(rptaEntrega.Resultado.ZIP, carpetaDescarga);
-												//webClient.DownloadFile(rptaEntrega.Resultado.ZIP, @"D:\NotaDebitoQR\" + DateTime.Now.Year + @"\" + rptaEntrega.Resultado.CUFE + ".zip");
-												using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
-												{
-													conn3.Open();
-													string qryActualizaTempWEBService = @"UPDATE dbo.facNotaTempWEBService SET CodCUFE=@cufe,cadenaQR=@cadenaQR WHERE identificador=@identificador";
-													SqlCommand cmdActualizaTempWEBService = new SqlCommand(qryActualizaTempWEBService, conn);
-													cmdActualizaTempWEBService.Parameters.Add("@cufe", SqlDbType.VarChar).Value = nombreArchivo;
-													cmdActualizaTempWEBService.Parameters.Add("@cadenaQR", SqlDbType.NVarChar).Value = rptaEntrega.Resultado.QR;
-													cmdActualizaTempWEBService.Parameters.Add("@identificador", SqlDbType.VarChar).Value = rptaEntrega.Identificador;
-													if (cmdActualizaTempWEBService.ExecuteNonQuery() > 0)
-													{
-														logFacturas.Info("Descarga Existosa de Archivos de la Nota Debito con Identificadotr:" + rptaEntrega.Identificador + "    Destino:" + carpetaDescarga);
-														valorRpta = nroNotaDebito.ToString();
-													}
-													else
-													{
-														logFacturas.Info("No fue Posible realizar la Actualizacion de la Tabla facNotaTempWEBService de la Factura con Identificadotr:" + rptaEntrega.Identificador);
-													}
-												}
-											}
-											catch (NotSupportedException nSuppExp)
-											{
-												logFacturas.Info("Se ha presentado una NotSupportedException durante la descarga de los objetos de la Nota Debito:" + nSuppExp.Message + "     " + nSuppExp.InnerException.Message);
-												valorRpta = "9X";
-											}
-											catch (ArgumentNullException argNull)
-											{
-												logFacturas.Info("Se ha presentado una ArgumentNullException durante la descarga de los objetos de la Nota Debito:" + argNull.Message + "     " + argNull.InnerException.Message);
-												valorRpta = "9X";
-											}
-											catch (WebException webEx1)
-											{
-												logFacturas.Info("Se ha presentado una Falla durante la descarga de los objetos de la factura:" + webEx1.Message + "     " + webEx1.InnerException.Message);
-												valorRpta = "93";
-											}
-											catch (Exception exx)
-											{
-												logFacturas.Info("No fue posible descargar los archivos.PDF, ZIP,CUFE y QR  !!! Causa:" + exx.Message);
-												valorRpta = "98";
-											}
-
-										}
-
-									}
-									else
-									{
-										logFacturas.Info("!!!   No fue posible Actualizar la Nota Debito en la Tabla: facNotaTempWEBService   !!!");
-									}
-								}
-							}
-							else
-							{
-								logFacturas.Info("!!!  La Recuperacion de Documentos de la Nota Debito, No fue posible. No se Actualiza la Factura en facNotaTempWEBService   !!!");
-								logFacturas.Warn("la respuesta recibida:" + strsb);
-								//**** aqui se debe insertar en la tabla de fallos
-
-							}
-						}
-						else if (strsb.Contains(validacionError))
-						{
-							respuestaEntregaError rptaEntregaErrores = JsonConvert.DeserializeObject<respuestaEntregaError>(strsb);
-							logFacturas.Info("!!!  La Entrega de la factura No fue Existosa. No se Actualiza la Factura en facFacturaTempWEBService   !!!");
-							logFacturas.Info("Errores:  Resultado:" + rptaEntregaErrores.Resultado);
-							logFacturas.Info("Respuesta del Servicio" + strsb);
-							valorRpta = "99";
-						}
-						return valorRpta;
-
-						//}
-					}
-					catch (WebException wExp01)
-					{
-						logFacturas.Warn("Se ha presentado una excepcion Http:" + wExp01.Message + " Pila de LLamados:" + wExp01.StackTrace);
-						return "93";
-					}
-					catch (NotSupportedException nsExp01)
-					{
-						logFacturas.Warn("Se ha presentado una excepcion Http:" + nsExp01.Message + " Pila de LLamados:" + nsExp01.StackTrace);
-						return "94";
-					}
-					catch (ProtocolViolationException pexp01)
-					{
-						logFacturas.Warn("Se ha presentado una excepcion Http:" + pexp01.Message + " Pila de LLamados:" + pexp01.StackTrace);
-						return "95";
-					}
-					catch (InvalidOperationException inExp01)
-					{
-						logFacturas.Warn("Se ha presentado una excepcion Http:" + inExp01.Message + " Pila de LLamados:" + inExp01.StackTrace);
-						return "96";
-
-					}
-					catch (HttpListenerException httpExp)
-					{
-						logFacturas.Warn("Se ha presentado una excepcion Http:" + httpExp.Message + " Pila de LLamados:" + httpExp.StackTrace);
-						return "97";
-					}
-
-					catch (Exception e)
-					{
-						logFacturas.Warn("Se ha presentado una excepcion:" + e.Message + " Pila de LLamados:" + e.StackTrace);
-						return "98";
-					}
-				}
-			}
-			catch (Exception ex1)
-			{
-				logFacturas.Warn("Se ha presentado una excepcion:" + ex1.Message + " Pila de LLamados:" + ex1.StackTrace);
-				return "98";
-			}
-
-
-		}
-	}
+        }
+    }
 
 }

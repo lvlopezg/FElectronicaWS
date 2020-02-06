@@ -12,7 +12,7 @@ namespace FElectronicaWS.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.9.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.3.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -26,8 +26,8 @@ namespace FElectronicaWS.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=wintvtibd01\\hsi_tst;Initial Catalog=HSI_TST;User ID=husi_usr;Password" +
-            "=pwdHUSI;MultipleActiveResultSets=True")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=tycho;Initial Catalog=HSI_PRI;User ID=interface;Password=interface;Mu" +
+            "ltipleActiveResultSets=True")]
         public string DBConexion {
             get {
                 return ((string)(this["DBConexion"]));
@@ -49,16 +49,6 @@ namespace FElectronicaWS.Properties {
         public string recursoRptaFacturaE {
             get {
                 return ((string)(this["recursoRptaFacturaE"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
-        [global::System.Configuration.DefaultSettingValueAttribute("https://preifacturaorquestadorwin.azurewebsites.net/")]
-        public string urlFacturaElectronica {
-            get {
-                return ((string)(this["urlFacturaElectronica"]));
             }
         }
         
@@ -91,7 +81,27 @@ namespace FElectronicaWS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("PRUE")]
+        [global::System.Configuration.DefaultSettingValueAttribute("860015536")]
+        public string NitHusi {
+            get {
+                return ((string)(this["NitHusi"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://pre.ifacturatransfiriendo.transfiriendo.com/IFacturaTransfiriendoWebApiFa" +
+            "seII/api/facturaservice/generarDocumento")]
+        public string urlFacturaElectronica {
+            get {
+                return ((string)(this["urlFacturaElectronica"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("SETT")]
         public string Prefijo {
             get {
                 return ((string)(this["Prefijo"]));
@@ -100,10 +110,46 @@ namespace FElectronicaWS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("860015536")]
-        public string NitHusi {
+        [global::System.Configuration.DefaultSettingValueAttribute("administrador")]
+        public string usuario {
             get {
-                return ((string)(this["NitHusi"]));
+                return ((string)(this["usuario"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Transfiriendo@2016")]
+        public string clave {
+            get {
+                return ((string)(this["clave"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("NC")]
+        public string PrefijoNotasNC {
+            get {
+                return ((string)(this["PrefijoNotasNC"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("ND")]
+        public string PrefijoNotaND {
+            get {
+                return ((string)(this["PrefijoNotaND"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://localhost:10105/")]
+        public string urlServicioClientes {
+            get {
+                return ((string)(this["urlServicioClientes"]));
             }
         }
     }

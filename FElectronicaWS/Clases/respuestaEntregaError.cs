@@ -17,13 +17,13 @@ namespace FElectronicaWS.Clases
 		[JsonProperty("Errors")]
 		public List<Error> Errors { get; set; }
 	}
-	public class Error
-	{
-		[JsonProperty("Errors")]
-		public List<string> Errors { get; set; }
+	//public class Error
+	//{
+	//	[JsonProperty("Errors")]
+	//	public List<string> Errors { get; set; }
 
-		[JsonProperty("Aplication")]
-		public string Aplication { get; set; }
-	}
+	//	[JsonProperty("Aplication")]
+	//	public string Aplication { get; set; }
+	//}
 
 }

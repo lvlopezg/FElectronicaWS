@@ -12,9 +12,7 @@ namespace FElectronicaWS.Contratos
     [ServiceContract]
     public interface IfacturaXACT
     {
-
         [OperationContract]
-        string GetData(Int32 nroFactura, Int32 idCliente, Int32 nroAtencion, string urlPdfFactura);
-
+        string GetData(int nroFactura, int idCliente, int nroAtencion, string urlPdfFactura);
     }
 }

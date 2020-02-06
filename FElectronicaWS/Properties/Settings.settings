@@ -5,18 +5,16 @@
     <Setting Name="DBConexion" Type="(Connection string)" Scope="Application">
       <DesignTimeValue Profile="(Default)">&lt;?xml version="1.0" encoding="utf-16"?&gt;
 &lt;SerializableConnectionString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"&gt;
-  &lt;ConnectionString&gt;Data Source=wintvtibd01\hsi_tst;Initial Catalog=HSI_TST;User ID=husi_usr;Password=pwdHUSI;MultipleActiveResultSets=True&lt;/ConnectionString&gt;
+  &lt;ConnectionString&gt;Data Source=tycho;Initial Catalog=HSI_PRI;User ID=interface;Password=interface;MultipleActiveResultSets=True&lt;/ConnectionString&gt;
+  &lt;ProviderName&gt;System.Data.SqlClient&lt;/ProviderName&gt;
 &lt;/SerializableConnectionString&gt;</DesignTimeValue>
-      <Value Profile="(Default)">Data Source=wintvtibd01\hsi_tst;Initial Catalog=HSI_TST;User ID=husi_usr;Password=pwdHUSI;MultipleActiveResultSets=True</Value>
+      <Value Profile="(Default)">Data Source=tycho;Initial Catalog=HSI_PRI;User ID=interface;Password=interface;MultipleActiveResultSets=True</Value>
     </Setting>
     <Setting Name="recursoFacturaE" Type="System.String" Scope="Application">
       <Value Profile="(Default)">api/receptiondocument</Value>
     </Setting>
     <Setting Name="recursoRptaFacturaE" Type="System.String" Scope="Application">
       <Value Profile="(Default)">api/processevent</Value>
-    </Setting>
-    <Setting Name="urlFacturaElectronica" Type="(Web Service URL)" Scope="Application">
-      <Value Profile="(Default)">https://preifacturaorquestadorwin.azurewebsites.net/</Value>
     </Setting>
     <Setting Name="urlDescargaPdfFACT" Type="System.String" Scope="Application">
       <Value Profile="(Default)">D:\FacturasQR\</Value>
@@ -27,11 +25,29 @@
     <Setting Name="urlDescargaPdfNC" Type="System.String" Scope="Application">
       <Value Profile="(Default)">D:\NotaCreditoQR\</Value>
     </Setting>
-    <Setting Name="Prefijo" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">PRUE</Value>
-    </Setting>
     <Setting Name="NitHusi" Type="System.String" Scope="Application">
       <Value Profile="(Default)">860015536</Value>
+    </Setting>
+    <Setting Name="urlFacturaElectronica" Type="(Web Service URL)" Scope="Application">
+      <Value Profile="(Default)">https://pre.ifacturatransfiriendo.transfiriendo.com/IFacturaTransfiriendoWebApiFaseII/api/facturaservice/generarDocumento</Value>
+    </Setting>
+    <Setting Name="Prefijo" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">SETT</Value>
+    </Setting>
+    <Setting Name="usuario" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">administrador</Value>
+    </Setting>
+    <Setting Name="clave" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Transfiriendo@2016</Value>
+    </Setting>
+    <Setting Name="PrefijoNotasNC" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">NC</Value>
+    </Setting>
+    <Setting Name="PrefijoNotaND" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">ND</Value>
+    </Setting>
+    <Setting Name="urlServicioClientes" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://localhost:10105/</Value>
     </Setting>
   </Settings>
 </SettingsFile>

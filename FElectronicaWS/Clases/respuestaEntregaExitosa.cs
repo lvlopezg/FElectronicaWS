@@ -17,7 +17,7 @@ namespace FElectronicaWS.Clases
         [JsonProperty("EsExitoso")]
         public bool EsExitoso { get; set; }
     }
-    public class Resultado
+    public class Resultadosx
     {
         [JsonProperty("PDF")]
         public string PDF { get; set; }
