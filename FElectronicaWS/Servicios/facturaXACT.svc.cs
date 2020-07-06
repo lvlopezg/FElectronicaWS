@@ -157,7 +157,7 @@ WHERE IdFactura =  @nroFactura";
                     codigoInterno = cliente.IdTercero.ToString(),
                     razonSocial = cliente.NomTercero,
                     nombreSucursal = cliente.NomTercero,
-                    correo =cliente.cuenta_correo.Trim(),
+                    correo =cliente.cuenta_correo.Trim().Split(';')[0],
                     telefono = cliente.telefono
                 };
                 using (SqlConnection connXX = new SqlConnection(Properties.Settings.Default.DBConexion))
@@ -296,7 +296,7 @@ LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.i
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
 WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura";
-                        logFacturas.Info("consulta de Productos:" + strDetalleFac);
+                        //logFacturas.Info("consulta de Productos:" + strDetalleFac);
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         logFacturas.Info("Nro Factura:" + rdFactura.GetInt32(0));
                         cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);
@@ -512,10 +512,10 @@ VALUES(@IdFactura, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
                                                         cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroFactura;
-                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                        cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                         //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

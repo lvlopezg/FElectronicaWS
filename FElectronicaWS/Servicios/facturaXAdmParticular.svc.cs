@@ -26,23 +26,28 @@ namespace FElectronicaWS.Servicios
             logFacturas.Info($"Se recibe factura con siguientes datos:Factura x Actividad:{nroFactura} IdCliente:{idCliente} urlPdf:{urlPdfFactura}");
             try
             {
-                // Inicializacion
-                Int32 _idContrato = 0;
-                Decimal _Valtotal = 0;
-                Decimal _ValDescuento = 0;
-                Decimal _ValDescuentoT = 0;
+                decimal _Valtotal = 0;
+                double TotalGravadoIva = 0;
+                double TotalExcentoIva = 0;
+                double ValorTotalIva = 0;
+                Int32 ValorTasaIva = 0;
+                double ValorBruto = 0;
                 Decimal _ValPagos = 0;
-                Decimal _ValImpuesto = 0;
+                decimal _ValCobrar = 0;
+                // Inicializacion
+                //Int32 _idContrato = 0;
+                //Decimal _ValDescuento = 0;
+                //Decimal _ValDescuentoT = 0;
+                //Decimal _ValImpuesto = 0;
                 Decimal _valorIva = 0;
-                Decimal _ValCobrar = 0;
                 DateTime _FecFactura = DateTime.Now;
-                Decimal _valPos = 0;
-                Decimal _valNoPos = 0;
+                //Decimal _valPos = 0;
+                //Decimal _valNoPos = 0;
                 Int32 _IdUsuarioR = 0;
                 Int32 _idTercero = 0;
                 string _usrNombre = string.Empty;
                 string _usrNumDocumento = string.Empty;
-                Byte _usrIdTipoDoc = 0;
+                //Byte _usrIdTipoDoc = 0;
                 string _numDocCliente = string.Empty;
                 Byte _tipoDocCliente = 0;
                 string _razonSocial = string.Empty;
@@ -84,7 +89,7 @@ WHERE b.numdocrespaldo=@nroFactura";
                         //_ValDescuento = 0;
                         //_ValDescuentoT = 0;
                         _ValPagos = 0;
-                        _ValImpuesto = 0;
+                        //_ValImpuesto = 0;
                         _ValCobrar = Decimal.Parse(Math.Round(rdFacturaEnc.GetDouble(12), 0).ToString());
                         _FecFactura = rdFacturaEnc.GetDateTime(9);
                         //_valPos = 0;
@@ -282,7 +287,7 @@ WHERE a.cod_cuen in (  select replace (val_camp, ';','') from gen_enti_dato wher
                     codigoInterno = _idTercero.ToString(),
                     razonSocial = _razonSocial,
                     nombreSucursal = _razonSocial,
-                    correo = _correoCliente.Trim(),
+                    correo = _correoCliente.Trim().Split(';')[0],
                     telefono = _telefonoCliente,
                 };
 
@@ -336,7 +341,7 @@ WHERE a.cod_cuen in (  select replace (val_camp, ';','') from gen_enti_dato wher
                 adquirienteTmp.ubicacion = ubicacionCliente;
                 documentoF2.adquiriente = adquirienteTmp;
 
-                double TotalGravadoIva = 0;
+                //double TotalGravadoIva = 0;
                 //double TotalGravadoIca = 0;
 
                 List<AnticiposItem> anticiposWrk = new List<AnticiposItem>();
@@ -367,11 +372,12 @@ WHERE a.cod_cuen in (  select replace (val_camp, ';','') from gen_enti_dato wher
                     detalles = tributosDetalle // Detalle de los Ivas
                 };
                 //tributosTMP.Add(itemTributo);
-                //************************************************************ Detalle de Factura por Administrativa ***********************************************************
+                //************************************************************ Detalle de Factura por Administrativa Particular ***********************************************************
                 using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     conexion01.Open();
-                    string strDetalleFac = @"SELECT top 10 b.numdocrespaldo, c.* FROM cxcfacmanual a
+                  //string strDetalleFac = @"SELECT top 10 b.numdocrespaldo, c.* FROM cxcfacmanual a
+                    string strDetalleFac = @"SELECT  top 1000 b.numdocrespaldo as factura,CONVERT(VARCHAR,c.IdCuenta)+'-'+CONVERT(varchar,C.num_regi) AS codProducto, c.* FROM cxcfacmanual a
 INNER JOIN cxccuenta b on a.idcuenta = b.idcuenta
 INNER JOIN cxcfacmanualconc c on c.IdCuenta = a.idcuenta
 WHERE c.val_unit_inte is null and NumDocRespaldo = @idFactura ORDER BY c.num_regi";
@@ -385,36 +391,61 @@ WHERE c.val_unit_inte is null and NumDocRespaldo = @idFactura ORDER BY c.num_reg
                         {
                             try
                             {
-                                List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                                List<TibutosDetalle> listaTributos = new List<TibutosDetalle>(); //Tributos para lalinea de producto
                                 DetallesItem lineaProducto = new DetallesItem();
                                 lineaProducto.tipoDetalle = 1; // Linea Normal
-                                string codigoProducto = rdDetalleFac.GetInt32(1).ToString();
+                                string codigoProducto = rdDetalleFac.GetString(1);
+                                lineaProducto.descripcion = rdDetalleFac.GetString(5);
                                 lineaProducto.valorCodigoInterno = codigoProducto;
                                 lineaProducto.codigoEstandar = "999";
                                 lineaProducto.valorCodigoEstandar = codigoProducto;
-                                lineaProducto.descripcion = rdDetalleFac.GetString(4);
-                                lineaProducto.unidades = double.Parse(rdDetalleFac.GetInt32(3).ToString());
-                                lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
-                                lineaProducto.valorUnitarioBruto = double.Parse(rdDetalleFac.GetSqlMoney(5).ToString());
-                                double valorBrutoW = double.Parse(rdDetalleFac.GetSqlMoney(6).ToString());
-                                lineaProducto.valorBruto = valorBrutoW;// double.Parse(rdDetalleFac.GetSqlMoney(6).ToString());
+                                double cantidad = double.Parse(rdDetalleFac.GetInt32(4).ToString());
+                                lineaProducto.unidades = cantidad;// double.Parse(rdDetalleFac.GetInt32(4).ToString());
+                                lineaProducto.unidadMedida = "94";
+                                double valUnitario =  double.Parse(rdDetalleFac.GetSqlMoney(6).ToString());
+                                lineaProducto.valorUnitarioBruto = valUnitario;// double.Parse(rdDetalleFac.GetSqlMoney(6).ToString());
+                                lineaProducto.valorBruto = valUnitario * cantidad; //double.Parse(rdDetalleFac.GetSqlMoney(6).ToString());
                                 lineaProducto.valorBrutoMoneda = "COP";
-                                //detalleProductos.Add(lineaProducto);
-
-                                TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                                double totalProducto = valUnitario * cantidad;
+                                ValorBruto += totalProducto; //double.Parse(rdDetalleFac.GetSqlMoney(6).ToString());
+                                int tasaIva = 0;
+                                TibutosDetalle tributosWRKIva = new TibutosDetalle(); //Detalle de tributos, para el producto
                                 tributosWRKIva.id = "01";
                                 tributosWRKIva.nombre = "Iva";
                                 tributosWRKIva.esImpuesto = true;
-                                tributosWRKIva.porcentaje = porcentaje;
-                                tributosWRKIva.valorBase = double.Parse(rdDetalleFac.GetSqlMoney(5).ToString()) * double.Parse(rdDetalleFac.GetInt32(3).ToString()); //Unidades * precio
-                                tributosWRKIva.valorImporte = valorImporte;
-                                TotalGravadoIva = TotalGravadoIva + valorBrutoW;
+                                if (rdDetalleFac.IsDBNull(10))
+                                {
+                                    tributosWRKIva.porcentaje = 0;
+                                }
+                                else
+                                {
+                                    tasaIva = (rdDetalleFac.GetInt32(10));
+                                    tributosWRKIva.porcentaje = double.Parse(rdDetalleFac.GetInt32(10).ToString()).TomarDecimales(2); //**************************
+                                }
+                                tributosWRKIva.valorBase = totalProducto;// double.Parse(rdDetalleFac.GetSqlMoney(6).ToString());
+                                tributosWRKIva.valorImporte = double.Parse(rdDetalleFac.GetSqlDouble(11).ToString()).TomarDecimales(2);
                                 tributosWRKIva.tributoFijoUnidades = 0;
                                 tributosWRKIva.tributoFijoValorImporte = 0;
                                 listaTributos.Add(tributosWRKIva);
                                 lineaProducto.tributos = listaTributos;
+                                if (rdDetalleFac.GetInt32(10) > 0)
+                                {
+                                    ValorTasaIva = rdDetalleFac.GetInt32(10);
+                                    TotalGravadoIva += totalProducto;// double.Parse(rdDetalleFac.GetSqlMoney(5).ToString());
+                                    ValorTotalIva += double.Parse(rdDetalleFac.GetSqlDouble(11).ToString()).TomarDecimales(2);
+                                }
+                                else
+                                {
+                                    TotalExcentoIva += totalProducto;// double.Parse(rdDetalleFac.GetSqlMoney(5).ToString());
+                                }
                                 detalleProductos.Add(lineaProducto);
                                 nroLinea++;
+
+
+
+
+
+
                             }
                             catch (Exception sqlExp)
                             {

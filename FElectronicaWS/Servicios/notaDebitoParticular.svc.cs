@@ -248,7 +248,7 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                 adquirienteTmp.codigoInterno = cliente.IdTercero.ToString();
                 adquirienteTmp.razonSocial = cliente.NomCliente;
                 adquirienteTmp.nombreSucursal = cliente.NomCliente;
-                adquirienteTmp.correo = cliente.cuenta_correo.Trim();
+                adquirienteTmp.correo = cliente.cuenta_correo.Trim().Split(';')[0];
                 adquirienteTmp.telefono = cliente.Nro_Telefono;
 
                 using (SqlConnection connXX = new SqlConnection(Properties.Settings.Default.DBConexion))
@@ -297,6 +297,14 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                 #endregion
                 double TotalGravadoIva = 0;
                 //double TotalGravadoIca = 0;
+                List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
+                NotificacionesItem notificaItem = new NotificacionesItem();
+                notificaItem.tipo = 1;
+                List<string> valorNotificacion = new List<string>();
+                valorNotificacion.Add(cliente.cuenta_correo.Trim());
+                notificaItem.valor = valorNotificacion;
+                notificaciones.Add(notificaItem);
+                NotaDebitoEnviar.notificaciones = notificaciones;
                 //************************************************************ Detalle de Nota Debito   ***********************************************************
                 using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {

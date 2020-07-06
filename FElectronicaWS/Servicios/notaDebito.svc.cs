@@ -290,8 +290,17 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                 adquirienteTmp.codigoInterno =cliente.IdTercero.ToString();
                 adquirienteTmp.razonSocial = cliente.NomTercero;
                 adquirienteTmp.nombreSucursal = cliente.NomTercero;
-                adquirienteTmp.correo = cliente.cuenta_correo;
+                adquirienteTmp.correo = cliente.cuenta_correo.Trim().Split(';')[0];
                 adquirienteTmp.telefono = cliente.telefono;
+
+                List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
+                NotificacionesItem notificaItem = new NotificacionesItem();
+                notificaItem.tipo = 1;
+                List<string> valorNotificacion = new List<string>();
+                valorNotificacion.Add(cliente.cuenta_correo.Trim());
+                notificaItem.valor = valorNotificacion;
+                notificaciones.Add(notificaItem);
+                NotaDebitoEnviar.notificaciones = notificaciones;
 
                 using (SqlConnection connXX = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
@@ -364,8 +373,8 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
 
                                 lineaProducto.unidades = double.Parse(rdValidaDet.GetInt32(2).ToString());
                                 lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
-                                lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
-                                lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
+                                lineaProducto.valorUnitarioBruto = rdValidaDet.GetDouble(3);
+                                lineaProducto.valorBruto = rdValidaDet.GetDouble(4);
                                 lineaProducto.valorBrutoMoneda = monedaNota;
 
                                 TibutosDetalle tributosWRKIva = new TibutosDetalle();
@@ -373,9 +382,9 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                                 tributosWRKIva.nombre = "Iva";
                                 tributosWRKIva.esImpuesto = true;
                                 tributosWRKIva.porcentaje = 0;
-                                tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
+                                tributosWRKIva.valorBase =rdValidaDet.GetDouble(4);
                                 tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
-                                TotalGravadoIva = TotalGravadoIva + double.Parse(_Valtotal.ToString());
+                                TotalGravadoIva = TotalGravadoIva +rdValidaDet.GetDouble(4);
                                 tributosWRKIva.tributoFijoUnidades = 0;
                                 tributosWRKIva.tributoFijoValorImporte = 0;
                                 listaTributos.Add(tributosWRKIva);
@@ -760,7 +769,6 @@ WHERE IdMovimiento = @idMovimiento";
                             cmdActualiza.Parameters.Add("@identificador", SqlDbType.VarChar).Value = respuesta.resultado.UUID;
                             cmdActualiza.Parameters.Add("@nroNota", SqlDbType.Int).Value = nroNotaDebito;
                             cmdActualiza.Parameters.Add("@idTipoNota", SqlDbType.VarChar).Value = "ND";
-
                             if (cmdActualiza.ExecuteNonQuery() > 0)
                             {
                                 logFacturas.Info("Nota Debito Actualizada con UUID en facNotaTempWEBService");
@@ -771,13 +779,63 @@ WHERE IdMovimiento = @idMovimiento";
                                         //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
                                         string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
                                         logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
-                                        webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
-                                        //System.Threading.Thread.Sleep(1000);
-                                        logFacturas.Info($"Descarga de PDF Nota Debito...Terminada En:{carpetaDescarga}");
-                                        carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
-                                        webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
-                                        //System.Threading.Thread.Sleep(1000);
-                                        logFacturas.Info($"Descarga de XML...Terminada En:{carpetaDescarga}");
+                                        try
+                                        {
+                                            webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                            System.Threading.Thread.Sleep(500);
+                                            logFacturas.Info($"Descarga de PDF Nota Debito...Terminada En:{carpetaDescarga}");
+                                        }
+                                        catch (NotSupportedException nSuppExp)
+                                        {
+                                            logFacturas.Info("Se ha presentado una NotSupportedException durante la descarga de Archivo PDF de la Nota Debito:" + nSuppExp.Message + "     " + nSuppExp.InnerException.Message);
+                                            valorRpta = "9X";
+                                        }
+                                        catch (ArgumentNullException argNull)
+                                        {
+                                            logFacturas.Info("Se ha presentado una ArgumentNullException durante la descarga de Archivo PDF de la Nota Debito:" + argNull.Message + "     " + argNull.InnerException.Message);
+                                            valorRpta = "9X";
+                                        }
+                                        catch (WebException webEx1)
+                                        {
+                                            logFacturas.Info("Se ha presentado una Falla durante la descarga de Archivo PDF de la Nota Debito:" + webEx1.Message + "     " + webEx1.InnerException.Message);
+                                            logFacturas.Warn($"Pila de Mensajes:::::{webEx1.StackTrace}");
+                                            valorRpta = "93";
+                                        }
+                                        catch (Exception exx)
+                                        {
+                                            logFacturas.Info("Se ha presentado una Excepcion en la descarga de Archivo PDF de la Nota Debito  !!! Causa:" + exx.Message);
+                                            valorRpta = "98";
+                                        }
+
+                                        try
+                                        {
+                                            carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                            webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                            System.Threading.Thread.Sleep(500);
+                                            logFacturas.Info($"Descarga de XML...Terminada En:{carpetaDescarga}");
+                                        }
+                                        catch (NotSupportedException nSuppExp)
+                                        {
+                                            logFacturas.Info("Se ha presentado una NotSupportedException durante la descarga de Archivo XML de la Nota Debito:" + nSuppExp.Message + "     " + nSuppExp.InnerException.Message);
+                                            valorRpta = "9X";
+                                        }
+                                        catch (ArgumentNullException argNull)
+                                        {
+                                            logFacturas.Info("Se ha presentado una ArgumentNullException durante la descarga de Archivo XML de la Nota Debito:" + argNull.Message + "     " + argNull.InnerException.Message);
+                                            valorRpta = "9X";
+                                        }
+                                        catch (WebException webEx1)
+                                        {
+                                            logFacturas.Info("Se ha presentado una Falla durante la descarga de Archivo XML de la Nota Debito:" + webEx1.Message + "     " + webEx1.InnerException.Message);
+                                            logFacturas.Warn($"Pila de Mensajes:::::{webEx1.StackTrace}");
+                                            valorRpta = "93";
+                                        }
+                                        catch (Exception exx)
+                                        {
+                                            logFacturas.Info("Se ha presentado una Excepcion en la descarga de Archivo XML de la Nota Debito  !!! Causa:" + exx.Message);
+                                            valorRpta = "98";
+                                        }
+
                                         using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                         {
                                             conn3.Open();
@@ -800,11 +858,11 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                     cmdInsertarAdvertencia.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
-                                                        cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroNotaDebito;
-                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                        cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaDebito;
+                                                        cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                         //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

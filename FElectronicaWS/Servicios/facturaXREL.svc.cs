@@ -335,7 +335,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                 adquirienteTmp.codigoInterno = _idTercero.ToString();
                 adquirienteTmp.razonSocial = _razonSocial;
                 adquirienteTmp.nombreSucursal = _razonSocial;
-                adquirienteTmp.correo = _correoCliente.Trim();
+                adquirienteTmp.correo = _correoCliente.Trim().Split(';')[0];
                 adquirienteTmp.telefono = _telefonoCliente;
 
                 if (_RegimenFiscal.Equals("C"))
@@ -577,8 +577,10 @@ upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal,
                     logFacturas.Info("Json de la Factura:" + facturaJson);
                     request.Method = "POST";
                     request.ContentType = "application/json";
-                    string Usuario = "administrador";
-                    string Clave = "Transfiriendo@2016";
+                    //string Usuario = "administrador";
+                    //string Clave = "Transfiriendo@2016";
+                    string Usuario = Properties.Settings.Default.usuario;
+                    string Clave = Properties.Settings.Default.clave;
                     string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
                     request.Headers.Add("Authorization", "Basic " + credenciales);
 
@@ -663,10 +665,10 @@ VALUES(@IdFactura, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
                                                         cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroFactura;
-                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                        cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                         //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

@@ -142,7 +142,7 @@ WHERE IdFactura =@nroFactura";
                     codigoInterno = cliente.IdTercero.ToString(),
                     razonSocial = $"{cliente.ApeCliente} {cliente.NomCliente}",
                     nombreSucursal = $"{cliente.ApeCliente} {cliente.NomCliente}",
-                    correo = cliente.cuenta_correo.Trim(),
+                    correo = cliente.cuenta_correo.Trim().Split(';')[0],
                     telefono = cliente.Nro_Telefono,
                 };
 
@@ -199,16 +199,7 @@ WHERE IdFactura =@nroFactura";
                 adquirienteTmp.ubicacion = ubicacionCliente;
                 documentoF2.adquiriente = adquirienteTmp;
                 double TotalGravadoIva = double.Parse(_ValImpuesto.ToString());
-
-
-
-                //List<AnticiposItem> anticiposWrk = new List<AnticiposItem>();
-                //AnticiposItem anticipoWrk = new AnticiposItem();
-                //anticipoWrk.comprobante = "22";
-                //anticipoWrk.valorAnticipo = double.Parse(_ValPagos.ToString());
-                //anticiposWrk.Add(anticipoWrk);
                 documentoF2.anticipos = anticiposWrk;
-
                 //************************************************************ Detalle de Factura por Actividad ***********************************************************
                 using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
@@ -309,7 +300,6 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura";
                     }
                 }
                 documentoF2.detalles = detalleProductos;
-
                 List<TributosItem> tributosTMP = new List<TributosItem>();
                 List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
                 DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva

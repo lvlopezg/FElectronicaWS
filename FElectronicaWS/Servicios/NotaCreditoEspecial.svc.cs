@@ -1,27 +1,29 @@
-﻿using FElectronicaWS.Contratos;
-using FElectronicaWS.Clases;
-using Newtonsoft.Json;
-using NLog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
+using System.ServiceModel;
 using System.Text;
+using FElectronicaWS.Clases;
+using FElectronicaWS.Contratos;
+using Newtonsoft.Json;
+using NLog;
 
 namespace FElectronicaWS.Servicios
 {
-        /// <summary>
-        /// /Nota credito Internacional
-        /// </summary>
-	public class notaInternacional : InotaInternacional
-	{
-		private static Logger logFacturas = LogManager.GetCurrentClassLogger();
+    // NOTA: puede usar el comando "Rename" del menú "Refactorizar" para cambiar el nombre de clase "NotaCreditoEspecial" en el código, en svc y en el archivo de configuración a la vez.
+    // NOTA: para iniciar el Cliente de prueba WCF para probar este servicio, seleccione NotaCreditoEspecial.svc o NotaCreditoEspecial.svc.cs en el Explorador de soluciones e inicie la depuración.
+    public class NotaCreditoEspecial : INotaCreditoEspecial
+    {
+        private static Logger logFacturas = LogManager.GetCurrentClassLogger();
 
         /// <summary>
-        /// /Nota Credito Internacional. No existen Notas DEbito Internacional.
+        /// /Nota Credito Internacional. Con Iva. Monesa Extranjera y COP.
         /// </summary>
         /// <param name="nroNotaCredito"></param>
         /// <param name="idCliente"></param>
@@ -46,20 +48,19 @@ namespace FElectronicaWS.Servicios
                 string _repLegal = string.Empty;
                 string DescNota = string.Empty;
                 Int16 _codigoCausal = 0;
-                Int32 idInternacional;
-                double tasaFact = 0;
-                double _totalNota = 0;
-                double _totalDtos = 0;
-                double _totalIva = 0;
-                double _valorBrutoNota = 0;
-                string tipoNota = "IN";
+                Int32 _tipoDocClienteDian = 0;
+                double _valorImporteIva = 0;
+                double _porcentajeIva = 0;
+                double _totalBruto = 0;
+                double _totalSinImpto = 0;
+                double _totalConImpto = 0;
+                double _valorNeto = 0;
                 #endregion
 
                 //Fin de Inicializacion
                 documentoRoot documentoF2 = new documentoRoot();
-                _facturaRelacionada = nroFactura;
                 Documento NotaCreditoEnviar = new Documento();
-                NotaCreditoEnviar.identificadorTransaccion = "ec4ba7aa-6122-4154-8779-b9fa0765cdf4";
+                NotaCreditoEnviar.identificadorTransaccion = "D7F719C2 - 75F4 - 4F06 - B7CB - F583FC28DBEE";
                 NotaCreditoEnviar.URLPDF = urlPdfNotaCredito;
                 NotaCreditoEnviar.NITFacturador = Properties.Settings.Default.NitHusi;
                 NotaCreditoEnviar.prefijo = Properties.Settings.Default.PrefijoNotasNC;
@@ -69,15 +70,32 @@ namespace FElectronicaWS.Servicios
                 NotaCreditoEnviar.tipoOperacion = "05"; //Standar
                 NotaCreditoEnviar.generaRepresentacionGrafica = false;
 
+                bool facXRel = false;
+                using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conn.Open();
+                    string qryEspeciales = "SELECT IdDestino,IndTipoFactura FROM facFactura where IdFactura=@idFactura";
+                    SqlCommand cmdEspeciales = new SqlCommand(qryEspeciales, conn);
+                    cmdEspeciales.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+                    SqlDataReader rdEspeciales = cmdEspeciales.ExecuteReader();
+                    if (rdEspeciales.HasRows)
+                    {
+                        if (rdEspeciales.Read())
+                        {
+                            if (rdEspeciales.GetInt32(0) == 0 && rdEspeciales.GetString(1) == "RAC")
+                            {
+                                facXRel = true;
+                            }
+                        }
+                    }
+                }
                 string urlClientes = string.Empty;
-                //ClienteInternacional cliente = new ClienteInternacional();
-                if (idCliente == 0 && nroAtencion == 0)
+                if (idCliente == 0 && nroAtencion == 0 && !facXRel)
                 {
                     urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteInternacional?idFactura={nroFactura}";
                 }
                 else
                 {
-                    //ClienteJuridico cliente = new ClienteJuridico();
                     urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteJuridico?idFactura={nroFactura}";
                 }
                 logFacturas.Info("URL de Request:" + urlClientes);
@@ -90,13 +108,14 @@ namespace FElectronicaWS.Servicios
                 logFacturas.Info("Cliente:" + infCliente);
                 Cliente cliente = JsonConvert.DeserializeObject<Cliente>(infCliente);
 
+
                 //****************** CLIENTE
                 //  Variables Inicializacion
                 string _direccionCliente = string.Empty;
                 string _telefonoCliente = string.Empty;
                 string _municipioCliente = string.Empty;
                 string _departamento = string.Empty;
-                int _localizacionCliente = 0;
+                //int _localizacionCliente = 0;
                 string _correoCliente = string.Empty;
                 //**** 
                 string codCufeFactura = string.Empty;
@@ -127,15 +146,39 @@ WHERE idFactura = @idFactura";
                         detalle.Add(item);
                         return UtilidadRespuestas.insertarErrorND("NC", nroNotaCredito, "9901", "CUFE de la FacturaRelacionada No Encontado", DateTime.Now, detalle);
                     }
-                    string qryNotaCredito = @"SELECT * FROM facFacturaPacInt WHERE IdFactura=@idFactura AND IndHabilitado=1";
+                    string qryNotaCredito = @"SELECT B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,B.ValMonto,C.PorcentajeIVA,C.ValMontoIVA,C.FechaTRM,C.ValorTRM,
+cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,cxcCta.ValFactura,
+B.IdMovimiento,6 as 'Causal'
+ FROM cxcTipoMovimientoEfectoNotas A
+INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
+INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
+INNER JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
+WHERE A.Indhabilitado=1 AND C.IdNumeroNota=@nroNotaCredito AND A.IndTipoNota='C' AND ISNULL(C.ValorTRM,0)=0
+
+UNION
+
+SELECT B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,c.ValMontoInte,c.PorcentajeIVA,c.ValMontoIVAInte,c.FechaTRM,c.ValorTRM,
+cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,cxcCta.ValFactura,
+B.IdMovimiento,6 as 'Causal'
+ FROM cxcTipoMovimientoEfectoNotas A
+INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
+INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
+INNER JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
+WHERE A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito and A.IndTipoNota='C' AND ISNULL(C.ValorTRM,0)>0";
                     SqlCommand cmdNotaCredito = new SqlCommand(qryNotaCredito, conn);
-                     cmdNotaCredito.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+                    cmdNotaCredito.Parameters.Add("@nroNotaCredito", SqlDbType.VarChar).Value = nroNotaCredito;
                     SqlDataReader rdNotaCredito = cmdNotaCredito.ExecuteReader();
                     if (rdNotaCredito.HasRows)
                     {
                         rdNotaCredito.Read();
-                        idInternacional = rdNotaCredito.GetInt32(0);
-                        tasaFact= rdNotaCredito.GetDouble(12);
+                        _idMovimiento = rdNotaCredito.GetInt32(18);
+                        var valorTNota = rdNotaCredito["ValMonto"];
+                        _Valtotal = Decimal.Parse(valorTNota.ToString());
+                        _ValCobrar = Decimal.Parse(valorTNota.ToString());
+                        _FecNotaCredito = rdNotaCredito.GetDateTime(3);
+                        _facturaRelacionada = nroFactura;
+                        _idTercero = cliente.IdTercero;
+                        _codigoCausal = short.Parse(rdNotaCredito.GetInt32(19).ToString());
                     }
                     else
                     {
@@ -154,22 +197,26 @@ WHERE idFactura = @idFactura";
                     formaPagoTmp.tipoPago = 1;
                     formaPagoTmp.codigoMedio = "10";
                     NotaCreditoEnviar.formaPago = formaPagoTmp;
-                
+
                     Adquiriente adquirienteTmp = new Adquiriente();
+
+                    using (SqlConnection connXX = new SqlConnection(Properties.Settings.Default.DBConexion))
+                    {
+                        connXX.Open();
+                        string qryTipoDocDian = "SELECT TipoDocDian FROM homologaTipoDocDian WHERE IdTipoDoc=@tipoDoc";
+                        SqlCommand cmdTipoDocDian = new SqlCommand(qryTipoDocDian, connXX);
+                        cmdTipoDocDian.Parameters.Add("@tipoDoc", SqlDbType.TinyInt).Value = cliente.TipoDoc_Cliente;
+                        logFacturas.Info($" cliente.TipoDoc_Cliente:{ cliente.TipoDoc_Cliente}");
+                        Int16 tipoDoc = Int16.Parse(cmdTipoDocDian.ExecuteScalar().ToString());
+                        _tipoDocClienteDian = Int32.Parse(tipoDoc.ToString());
+                        logFacturas.Info($"_tipoDocClienteDian:{_tipoDocClienteDian}");
+                    }
+                    adquirienteTmp.tipoIdentificacion = _tipoDocClienteDian;
                     adquirienteTmp.identificacion = cliente.NroDoc_Cliente;
-                    if (cliente.TipoDoc_Cliente == 1)
-                    {
-                        adquirienteTmp.tipoIdentificacion = 31;
-                    }
-                    else if (cliente.TipoDoc_Cliente == 2)
-                    {
-                        adquirienteTmp.tipoIdentificacion = 13;
-                    }
                     adquirienteTmp.codigoInterno = cliente.IdTercero.ToString();
                     adquirienteTmp.razonSocial = cliente.NomTercero;
                     adquirienteTmp.nombreSucursal = cliente.NomTercero;
                     adquirienteTmp.correo = cliente.cuenta_correo.Trim().Split(';')[0];
-
                     if (cliente.telefono.Length > 10)
                     {
                         cliente.telefono = cliente.telefono.Substring(0, 10);
@@ -183,6 +230,14 @@ WHERE idFactura = @idFactura";
                     {
                         adquirienteTmp.tipoRegimen = "49";
                     }
+                    List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
+                    NotificacionesItem notificaItem = new NotificacionesItem();
+                    notificaItem.tipo = 1;
+                    List<string> valorNotificacion = new List<string>();
+                    valorNotificacion.Add(cliente.cuenta_correo.Trim());
+                    notificaItem.valor = valorNotificacion;
+                    notificaciones.Add(notificaItem);
+                    NotaCreditoEnviar.notificaciones = notificaciones;
                     //TODO: Aqui insertar lo que se defina de Responsabilidades  RUT documentoF2.adquiriente.responsabilidadesRUT
                     if (cliente.IdNaturaleza == 3)
                     {
@@ -208,123 +263,68 @@ WHERE idFactura = @idFactura";
                     documentoF2.adquiriente = adquirienteTmp;
                     double TotalGravadoIva = 0;
                     //double TotalGravadoIca = 0;
-                    List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
-                    NotificacionesItem notificaItem = new NotificacionesItem();
-                    notificaItem.tipo = 1;
-                    List<string> valorNotificacion = new List<string>();
-                    valorNotificacion.Add(cliente.cuenta_correo.Trim());
-                    notificaItem.valor = valorNotificacion;
-                    notificaciones.Add(notificaItem);
-                    NotaCreditoEnviar.notificaciones = notificaciones;
-                    /////documentoF2.notificaciones = notificaciones;    todo:Validar la noticiacion de los correos de Notificacion
-                    List<TributosItem> tributosTMP = new List<TributosItem>();
-                    List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
+
                     //************************************************************ Detalle de Nota Credito   ***********************************************************
-                    Totales totalesTmp = new Totales();
                     using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                     {
                         conexion01.Open();
                         try
                         {
-                            string qryNotaIntDetalle = @"SELECT IdProducto,codProducto,NomProducto,IdMovimiento,ValUnitUSD,Cantidad,ValTotalUSD
-                                FROM facFacturaPacIntNotaDet WHERE IdFacturaPacInt =@idInternacional and idNota=@idNota";
-                             SqlCommand sqlValidaDet = new SqlCommand(qryNotaIntDetalle, conexion01);
-                            sqlValidaDet.Parameters.Add("@idInternacional", SqlDbType.Int).Value = idInternacional;
+                            SqlCommand sqlValidaDet = new SqlCommand("spTraeDetalleNotasIVAMonExt", conexion01);
+                            sqlValidaDet.CommandType = CommandType.StoredProcedure;
                             sqlValidaDet.Parameters.Add("@idNota", SqlDbType.Int).Value = nroNotaCredito;
                             SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
-                            if (rdValidaDet.HasRows) // Procesos para la Nota Tipo:IN
+                            if (rdValidaDet.HasRows)
                             {
-                                tipoNota = "IN";
                                 while (rdValidaDet.Read())
                                 {
                                     List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
                                     DetallesItem lineaProducto = new DetallesItem();
                                     lineaProducto.tipoDetalle = 1; // Linea Normal
-                                    string codigoProducto = rdValidaDet.GetString(1);
+                                    string codigoProducto = rdValidaDet.GetString(0);
                                     lineaProducto.valorCodigoInterno = codigoProducto;
                                     lineaProducto.codigoEstandar = "999";
                                     lineaProducto.valorCodigoEstandar = codigoProducto;
-                                    lineaProducto.descripcion = rdValidaDet.GetString(2);
-                                    lineaProducto.unidades = double.Parse(rdValidaDet.GetInt32(5).ToString());
+                                    lineaProducto.descripcion = rdValidaDet.GetString(1);
+                                    lineaProducto.unidades = double.Parse(rdValidaDet.GetInt32(2).ToString());//Siempre es uno por definicion
                                     lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
-                                    if (double.Parse(rdValidaDet.GetInt32(5).ToString())==0)
-                                    {
-                                        lineaProducto.unidades = 1;
-                                        lineaProducto.valorUnitarioBruto = double.Parse(rdValidaDet.GetDecimal(6).ToString());
-                                    }
-                                    lineaProducto.valorUnitarioBruto = double.Parse(rdValidaDet.GetDecimal(4).ToString());
-                                    lineaProducto.valorBruto = double.Parse(rdValidaDet.GetDecimal(6).ToString());
-                                    _valorBrutoNota= _valorBrutoNota+ double.Parse(rdValidaDet.GetDecimal(6).ToString());
+                                    lineaProducto.valorUnitarioBruto = double.Parse(rdValidaDet.GetDecimal(3).ToString());
+                                    _totalSinImpto = double.Parse(rdValidaDet.GetDecimal(3).ToString());
+                                    lineaProducto.valorBruto = double.Parse(rdValidaDet.GetDecimal(3).ToString());
+                                    _totalBruto = double.Parse(rdValidaDet.GetDecimal(3).ToString());
+                                    _totalConImpto = double.Parse(rdValidaDet.GetDecimal(4).ToString());
+                                    _valorNeto= double.Parse(rdValidaDet.GetDecimal(4).ToString());
                                     lineaProducto.valorBrutoMoneda = monedaNota;
-                                    _idMovimiento = rdValidaDet.GetInt32(3);
-
-                                    _totalNota=_totalNota+ double.Parse(rdValidaDet.GetDecimal(6).ToString());
-                                    _totalDtos = 0;
-                                    _totalIva = 0;
 
                                     TibutosDetalle tributosWRKIva = new TibutosDetalle();
                                     tributosWRKIva.id = "01";
                                     tributosWRKIva.nombre = "Iva";
                                     tributosWRKIva.esImpuesto = true;
-                                    tributosWRKIva.porcentaje = 0;
-                                    tributosWRKIva.valorBase = double.Parse(rdValidaDet.GetDecimal(6).ToString());
-                                    tributosWRKIva.valorImporte = double.Parse(rdValidaDet.GetDecimal(6).ToString()) * 0; //**** Se establece para Iva siempre en CEro(0)
-                                    TotalGravadoIva += double.Parse(rdValidaDet.GetDecimal(6).ToString());
+                                    tributosWRKIva.porcentaje = double.Parse(rdValidaDet.GetDecimal(9).ToString()); //********************************
+                                    _porcentajeIva= double.Parse(rdValidaDet.GetDecimal(9).ToString());
+                                    tributosWRKIva.valorBase = double.Parse(rdValidaDet.GetDecimal(3).ToString());
+                                    tributosWRKIva.valorImporte = double.Parse(rdValidaDet.GetDecimal(8).ToString());
+                                    _valorImporteIva= double.Parse(rdValidaDet.GetDecimal(8).ToString());
+                                    TotalGravadoIva = TotalGravadoIva+ double.Parse(rdValidaDet.GetDecimal(3).ToString());
                                     tributosWRKIva.tributoFijoUnidades = 0;
                                     tributosWRKIva.tributoFijoValorImporte = 0;
                                     listaTributos.Add(tributosWRKIva);
                                     lineaProducto.tributos = listaTributos;
                                     detalleProductos.Add(lineaProducto);
                                 }
-                                ///<summary>
-                                ///Inicio de Totales de la Factura
-                                /// </summary>
-                                //Totales totalesTmp = new Totales()
-                                totalesTmp.valorBruto = _valorBrutoNota;
-                                totalesTmp.valorAnticipos = double.Parse(_ValPagos.ToString());
-                                totalesTmp.valorTotalSinImpuestos = 0; /// Se ajusta a cero, por generalidad de la Nota Internacional
-                                totalesTmp.valorTotalConImpuestos = TotalGravadoIva;
-                                totalesTmp.valorNeto = double.Parse(_Valtotal.ToString());
-                                ///<summary>
-                                ///Liquidacion de Impuestos
-                                /// </summary>
-
-                                DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
-                                {
-                                    valorImporte = 0,
-                                    valorBase = 0, // Se ajusta por Generalidad de la Nota Internacional
-                                    porcentaje = 0
-                                };
-                                tributosDetalle.Add(detalleTributos);
-                                TributosItem itemTributo = new TributosItem()
-                                {
-                                    id = "01", //Total de Iva 
-                                    nombre = "Iva",
-                                    esImpuesto = true,
-                                    valorImporteTotal = _totalIva,
-                                    detalles = tributosDetalle // DEtalle de los Ivas
-                                };
-                                tributosTMP.Add(itemTributo);
-
-
                             }
-                            else  ///Proceso para la nota tipo:INT
+                            else
                             {
-                                ////                                string qryTipoNota = @"SELECT IdMovimiento,NumDocumento,DesMovimiento,b.IdTipoHomologoDian FROM cxccarteramovi a
-                                ////INNER JOIN CXCTIPOMOVIMIENTOEFECTONOTAS b on a.idtipomovimiento=b.idtipomovimiento and b.indhabilitado=1
-                                ////WHERE a.IdMovimiento=@idMovimiento";
-                                ///
-                                tipoNota = "NC";
-                                string qryTipoNota = @"SELECT a.ValTotalUSD, b.NomNotaCredito as Desnota FROM facFacturaPacInt a 
-INNER JOIN facNotaCredito b ON a.IdFactura =b.IdFactura  AND b.IndTotal =1 WHERE a.IdFacturaPacInt= @idInternacional";
+                                string qryTipoNota = @"SELECT IdMovimiento,NumDocumento,DesMovimiento,b.IdTipoHomologoDian from cxccarteramovi a
+inner join CXCTIPOMOVIMIENTOEFECTONOTAS b on a.idtipomovimiento=b.idtipomovimiento and b.indhabilitado=1
+WHERE a.IdMovimiento=@idMovimiento";
                                 SqlCommand cmdTipoNota = new SqlCommand(qryTipoNota, conexion01);
-                                cmdTipoNota.Parameters.Add("@idInternacional", SqlDbType.Int).Value = idInternacional;
+                                cmdTipoNota.Parameters.Add("@idMovimiento", SqlDbType.Int).Value = _idMovimiento;
                                 SqlDataReader rdTipoNota = cmdTipoNota.ExecuteReader();
                                 if (rdTipoNota.HasRows)
                                 {
                                     rdTipoNota.Read();
-                                    DescNota = rdTipoNota.GetString(1);
-                                    _Valtotal = rdTipoNota.GetDecimal(0);
+                                    DescNota = rdTipoNota.GetString(2);
                                     DetallesItem lineaProducto = new DetallesItem();
                                     lineaProducto.tipoDetalle = 1; // Linea Normal
                                     string codigoProducto = "NC1";
@@ -338,38 +338,7 @@ INNER JOIN facNotaCredito b ON a.IdFactura =b.IdFactura  AND b.IndTotal =1 WHERE
                                     lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
                                     lineaProducto.valorBrutoMoneda = monedaNota;
                                     detalleProductos.Add(lineaProducto);
-                                    ///<summary>
-                                    ///Inicio de Totales de la Factura
-                                    /// </summary>
-                                    //Totales totalesTmp = new Totales()
-                                    //{
-                                    totalesTmp.valorBruto = double.Parse(_Valtotal.ToString());
-                                    totalesTmp.valorAnticipos = double.Parse(_ValPagos.ToString());
-                                    totalesTmp.valorTotalSinImpuestos = 0; // Se establece por Generalida de Nota Internacional sin Iva double.Parse(_Valtotal.ToString());
-                                    totalesTmp.valorTotalConImpuestos = double.Parse(_Valtotal.ToString()); //Estas Notas NUnca Tienen Impuestos, Por Regla General
-                                    totalesTmp.valorNeto = double.Parse(_Valtotal.ToString());
-                                    //};
                                 }
-                                ///<summary>
-                                ///Liquidacion de Impuestos
-                                /// </summary>
-
-                                DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
-                                {
-                                    valorImporte = 0,
-                                    valorBase =0, // Se establece en cero por Generalidad de la Nota Internacional sin IVA double.Parse(_Valtotal.ToString()),
-                                    porcentaje = 0
-                                };
-                                tributosDetalle.Add(detalleTributos);
-                                TributosItem itemTributo = new TributosItem()
-                                {
-                                    id = "01", //Total de Iva 
-                                    nombre = "Iva",
-                                    esImpuesto = true,
-                                    valorImporteTotal = _totalIva,
-                                    detalles = tributosDetalle // DEtalle de los Ivas
-                                };
-                                tributosTMP.Add(itemTributo);
                             }
                         }
                         catch (Exception sqlExp)
@@ -402,11 +371,6 @@ WHERE IdMovimiento = @idMovimiento";
                             {
                                 ObservacionesNota = $"Anulacion de Factura:{nroFactura}";
                             }
-                            else
-                            {
-                                _codigoCausal = 6;
-                                ObservacionesNota = $"Nota Credito por Concepto de Otros Motivos No codificados Factura{nroFactura} ";
-                            }
                         }
                     }
                     DocumentosAfectadosItem itemAfectado = new DocumentosAfectadosItem();
@@ -421,36 +385,36 @@ WHERE IdMovimiento = @idMovimiento";
                     DocumentosAfectados.Add(itemAfectado);
                     NotaCreditoEnviar.documentosAfectados = DocumentosAfectados;
                     documentoF2.detalles = detalleProductos;
-                    //////////List<TributosItem> tributosTMP = new List<TributosItem>();
-                    //////////List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
-                    //////////DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
-                    //////////{
-                    //////////    valorImporte = 0,
-                    //////////    valorBase = TotalGravadoIva,
-                    //////////    porcentaje = 0
-                    //////////};
-                    //////////tributosDetalle.Add(detalleTributos);
-                    //////////TributosItem itemTributo = new TributosItem()
-                    //////////{
-                    //////////    id = "01", //Total de Iva 
-                    //////////    nombre = "Iva",
-                    //////////    esImpuesto = true,
-                    //////////    valorImporteTotal = _totalIva,
-                    //////////    detalles = tributosDetalle // DEtalle de los Ivas
-                    //////////};
-                    //////////tributosTMP.Add(itemTributo);
+                    List<TributosItem> tributosTMP = new List<TributosItem>();
+                    List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
+                    DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
+                    {
+                        valorImporte = _valorImporteIva,
+                        valorBase = TotalGravadoIva,
+                        porcentaje = _porcentajeIva
+                    };
+                    tributosDetalle.Add(detalleTributos);
+                    TributosItem itemTributo = new TributosItem()
+                    {
+                        id = "01", //Total de Iva 
+                        nombre = "Iva",
+                        esImpuesto = true,
+                        valorImporteTotal = _valorImporteIva,
+                        detalles = tributosDetalle // Detalle de los Ivas
+                    };
+                    tributosTMP.Add(itemTributo);
                     documentoF2.tributos = tributosTMP;
-                    /////<summary>
-                    /////Inicio de Totales de la Factura
-                    ///// </summary>
-                    //Totales totalesTmp = new Totales()
-                    //{
-                    //    valorBruto = double.Parse(_Valtotal.ToString()),
-                    //    valorAnticipos = double.Parse(_ValPagos.ToString()),
-                    //    valorTotalSinImpuestos = TotalGravadoIva,
-                    //    valorTotalConImpuestos = double.Parse(_Valtotal.ToString()),// + double.Parse(_ValImpuesto.ToString()),
-                    //    valorNeto = double.Parse(_Valtotal.ToString())
-                    //};
+                    ///<summary>
+                    ///Inicio de Totales de la Factura
+                    /// </summary>
+                    Totales totalesTmp = new Totales()
+                    {
+                        valorBruto = _totalBruto,
+                        valorAnticipos = double.Parse(_ValPagos.ToString()),
+                        valorTotalSinImpuestos = _totalSinImpto,
+                        valorTotalConImpuestos = _totalConImpto,// + double.Parse(_ValImpuesto.ToString()),
+                        valorNeto = _valorNeto
+                    };
                     documentoF2.totales = totalesTmp;
                     logFacturas.Info("Numero de Productos Procesados, para JSon:" + detalleProductos.Count);
                     try
@@ -470,7 +434,7 @@ WHERE IdMovimiento = @idMovimiento";
                         string Clave = Properties.Settings.Default.clave;
                         string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
                         request.Headers.Add("Authorization", "Basic " + credenciales);
-                        Byte[] data = Encoding.UTF8.GetBytes(NotaCreditoJson);
+                        Byte[ ] data = Encoding.UTF8.GetBytes(NotaCreditoJson);
                         Stream st = request.GetRequestStream();
                         st.Write(data, 0, data.Length);
                         st.Close();
@@ -479,12 +443,12 @@ WHERE IdMovimiento = @idMovimiento";
                         valores = request.Headers;
 
                         // Pone todos los nombres en un Arreglo
-                        string[] arr1 = valores.AllKeys;
+                        string[ ] arr1 = valores.AllKeys;
                         for (loop1 = 0; loop1 < arr1.Length; loop1++)
                         {
                             logFacturas.Info("Key: " + arr1[loop1] + "<br>");
                             // Todos los valores
-                            string[] arr2 = valores.GetValues(arr1[loop1]);
+                            string[ ] arr2 = valores.GetValues(arr1[loop1]);
                             for (loop2 = 0; loop2 < arr2.Length; loop2++)
                             {
                                 logFacturas.Info("Value " + loop2 + ": " + arr2[loop2]);
@@ -520,12 +484,15 @@ WHERE IdMovimiento = @idMovimiento";
                                     {
                                         try
                                         {
+                                            //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
                                             string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
                                             logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
                                             webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                            //System.Threading.Thread.Sleep(1000);
                                             logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
                                             carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
                                             webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                            //System.Threading.Thread.Sleep(1000);
                                             logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
                                             using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                             {
@@ -551,6 +518,7 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                         {
                                                             cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaCredito;
                                                             cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
+                                                            //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                             cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
                                                             cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                             if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
@@ -696,8 +664,6 @@ VALUES(@IdNota, @CodError, @consecutivo, @FecRegistro, @DescripcionError)";
                 logFacturas.Warn("Se ha presentado una excepcion:" + ex1.Message + " Pila de LLamados:" + ex1.StackTrace);
                 return "98";
             }
-
-
         }
     }
 }

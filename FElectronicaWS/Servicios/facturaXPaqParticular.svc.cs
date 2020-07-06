@@ -15,8 +15,7 @@ using System.Text;
 
 namespace FElectronicaWS.Servicios
 {
-    // NOTA: puede usar el comando "Rename" del menú "Refactorizar" para cambiar el nombre de clase "facturaXPaqParticular" en el código, en svc y en el archivo de configuración a la vez.
-    // NOTA: para iniciar el Cliente de prueba WCF para probar este servicio, seleccione facturaXPaqParticular.svc o facturaXPaqParticular.svc.cs en el Explorador de soluciones e inicie la depuración.
+
     public class facturaXPaqParticular : IfacturaXPaqParticular
     {
         private static Logger logFacturas = LogManager.GetCurrentClassLogger();
@@ -216,7 +215,7 @@ WHERE IdFactura=@idFactura";
                     codigoInterno = _idTercero.ToString(),
                     razonSocial = _razonSocial,
                     nombreSucursal = _razonSocial,
-                    correo = _correoCliente.Trim(),
+                    correo = _correoCliente.Trim().Split(';')[0],
                     telefono = _telefonoCliente,
                 };
 
@@ -575,10 +574,10 @@ VALUES(@IdFactura, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
                                                         cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroFactura;
-                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                        cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                         //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

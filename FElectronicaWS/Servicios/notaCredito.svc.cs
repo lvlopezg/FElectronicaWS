@@ -204,7 +204,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     adquirienteTmp.codigoInterno = cliente.IdTercero.ToString();
                     adquirienteTmp.razonSocial = cliente.NomTercero;
                     adquirienteTmp.nombreSucursal = cliente.NomTercero;
-                    adquirienteTmp.correo = cliente.cuenta_correo.Trim();
+                    adquirienteTmp.correo = cliente.cuenta_correo.Trim().Split(';')[0];
                     if (cliente.telefono.Length > 10)
                     {
                         cliente.telefono = cliente.telefono.Substring(0, 10);
@@ -218,6 +218,14 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     {
                         adquirienteTmp.tipoRegimen = "49";
                     }
+                    List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
+                    NotificacionesItem notificaItem = new NotificacionesItem();
+                    notificaItem.tipo = 1;
+                    List<string> valorNotificacion = new List<string>();
+                    valorNotificacion.Add(cliente.cuenta_correo.Trim());
+                    notificaItem.valor = valorNotificacion;
+                    notificaciones.Add(notificaItem);
+                    NotaCreditoEnviar.notificaciones = notificaciones;
                     //TODO: Aqui insertar lo que se defina de Responsabilidades  RUT documentoF2.adquiriente.responsabilidadesRUT
                     if (cliente.IdNaturaleza == 3)
                     {
@@ -490,11 +498,11 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                         cmdInsertarAdvertencia.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
                                                         foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                         {
-                                                            cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroNotaCredito;
-                                                            cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                            cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaCredito;
+                                                            cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                             //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                             cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                            cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                            cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                             if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                             {
                                                                 logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

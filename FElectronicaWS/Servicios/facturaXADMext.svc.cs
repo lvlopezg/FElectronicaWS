@@ -17,7 +17,6 @@ using System.Threading;
 
 namespace FElectronicaWS.Servicios
 {
-
     public class facturaXADMext : IfacturaXADMext
     {
         private static Logger logFacturas = LogManager.GetCurrentClassLogger();
@@ -26,15 +25,23 @@ namespace FElectronicaWS.Servicios
             logFacturas.Info("Se recibe factura con siguientes datos nroFactura: " + nroFactura + "  IdCliente:" + idCliente + " urlPdf:" + urlPdfFactura);
             try
             {
-                //Int32 _idContrato = 0;
+                ////Int32 _idContrato = 0;
+                //decimal _Valtotal = 0;
+                ////Decimal _ValDescuento = 0;
+                ////Decimal _ValDescuentoT = 0;
+                //Decimal _ValPagos = 0;
+                //Decimal _ValImpuesto = 0;
+                //decimal _ValCobrar = 0;
+                //double ValBrutoProd = 0;
+                //double _totalIvaProd = 0;
                 decimal _Valtotal = 0;
-                //Decimal _ValDescuento = 0;
-                //Decimal _ValDescuentoT = 0;
+                double TotalGravadoIva = 0;
+                double TotalExcentoIva = 0;
+                double ValorTotalIva = 0;
+                Int32 ValorTasaIva = 0;
+                double ValorBruto = 0;
                 Decimal _ValPagos = 0;
-                Decimal _ValImpuesto = 0;
                 decimal _ValCobrar = 0;
-                double ValBrutoProd = 0;
-                double _totalIvaProd = 0;
                 DateTime _FecFactura = DateTime.Now;
                 //Decimal _valPos = 0;
                 //Decimal _valNoPos = 0;
@@ -67,7 +74,6 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.tipoOperacion = "05";
                 facturaEnviar.moneda = moneda;
                 facturaEnviar.generaRepresentacionGrafica = false;
-
                 //ClienteInternacional cliente = new ClienteInternacional();
                 string urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteInternacional?idFactura={nroFactura}";
                 logFacturas.Info("URL de Request:" + urlClientes);
@@ -79,7 +85,6 @@ namespace FElectronicaWS.Servicios
                 string infCliente = sr.ReadToEnd();
                 logFacturas.Info("Cliente:" + infCliente);
                 Cliente cliente = JsonConvert.DeserializeObject<Cliente>(infCliente);
-
                 using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     conn.Open();
@@ -97,7 +102,7 @@ WHERE b.numdocrespaldo=@nroFactura";
                         string valorTf = Math.Round(rdFacturaEnc.GetDouble(12), 0).ToString(); // Valor Toal de la factura Incluido el IVA
                         _Valtotal = Decimal.Parse(valorTf);
                         _ValPagos = 0;
-                        _ValImpuesto = 0;
+                        //_ValImpuesto = 0;
                         _ValCobrar = Decimal.Parse(Math.Round(rdFacturaEnc.GetDouble(12), 0).ToString()); // Valor a Cobrar
                         cliente.FecFactura = rdFacturaEnc.GetDateTime(9);
                         _tipoDocClienteDian = rdFacturaEnc.GetByte(5);
@@ -114,7 +119,6 @@ WHERE b.numdocrespaldo=@nroFactura";
                         concepto = int.Parse(cmdConsultaPagos.ExecuteScalar().ToString());
                     }
                 }
-
                 string formatoWrk = formatosFecha.formatofecha(_FecFactura);
                 facturaEnviar.fechaEmision = formatoWrk.Split('T')[0];
                 facturaEnviar.horaEmision = formatoWrk.Split('T')[1];
@@ -122,7 +126,6 @@ WHERE b.numdocrespaldo=@nroFactura";
                 formaPagoTmp.tipoPago = 1;
                 formaPagoTmp.codigoMedio = "10";
                 facturaEnviar.formaPago = formaPagoTmp;
-
                 List<DetallesItem> detalleProductos = new List<DetallesItem>();
                 //****************** CLIENTE
                 //  Variables Inicializacion
@@ -132,73 +135,11 @@ WHERE b.numdocrespaldo=@nroFactura";
                 string _departamento = string.Empty;
                 int _localizacionCliente = 0;
                 string _correoCliente = string.Empty;
+                string codigoPais = string.Empty;
 
                 using (SqlConnection connx = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     connx.Open();
-                    #region MyRegion
-                    //                    connx.Open();
-                    //                    string qryDatosCliente1 = @"SELECT IdLocalizaTipo,DesLocalizacion,B.nom_dipo,A.IdLugar FROM genTerceroLocaliza A
-                    //LEFT JOIN GEN_DIVI_POLI B ON A.IdLugar=B.IdLugar
-                    //WHERE IdTercero=@idTercero and IdLocalizaTipo IN (2,3)
-                    //ORDER BY IdLocalizaTipo";
-                    //                    SqlCommand cmdDatosCliente1 = new SqlCommand(qryDatosCliente1, connx);
-                    //                    cmdDatosCliente1.Parameters.Add("@idTercero", SqlDbType.Int).Value = _idTercero;
-                    //                    SqlDataReader rdDatosCliente1 = cmdDatosCliente1.ExecuteReader();
-                    //                    if (rdDatosCliente1.HasRows)
-                    //                    {
-                    //                        while (rdDatosCliente1.Read())
-                    //                        {
-                    //                            if (rdDatosCliente1.GetInt32(0) == 2)
-                    //                            {
-                    //                                _direccionCliente = rdDatosCliente1.GetString(1);
-                    //                                _municipioCliente = rdDatosCliente1.GetString(2);
-                    //                                _localizacionCliente = rdDatosCliente1.GetInt32(3);
-                    //                            }
-                    //                            else if (rdDatosCliente1.GetInt32(0) == 3)
-                    //                            {
-                    //                                _telefonoCliente = rdDatosCliente1.GetString(1);
-                    //                                if (_telefonoCliente.Length > 10)
-                    //                                {
-                    //                                    _telefonoCliente = _telefonoCliente.Substring(0, 10);
-                    //                                }
-                    //                            }
-                    //                        }
-                    //                    }
-
-                    //                    string qryDatosCliente2 = @"SELECT COD_DEPTO,COD_MPIO,DPTO,NOM_MPIO FROM GEN_DIVI_POLI A
-                    //                    INNER JOIN HUSI_Divipola HB ON a.num_ptel=COD_DEPTO
-                    //                    WHERE a.IdLugar=@idLugar";
-                    //                    SqlCommand cmdDatosCliente2 = new SqlCommand(qryDatosCliente2, connx);
-                    //                    cmdDatosCliente2.Parameters.Add("@idLugar", SqlDbType.Int).Value = _localizacionCliente;
-                    //                    SqlDataReader rdDatosCliente2 = cmdDatosCliente2.ExecuteReader();
-                    //                    if (rdDatosCliente2.HasRows)
-                    //                    {
-                    //                        rdDatosCliente2.Read();
-                    //                        _departamento = rdDatosCliente2.GetString(2);
-                    //                    }
-                    //                    string qryDatosCliente3 = @"SELECT A.Correo FROM concontratocorreo A
-                    //INNER JOIN facFactura B ON A.IdContrato=B.IdContrato
-                    //WHERE A.indhabilitado=1 AND B.idFactura=@idFactura
-                    //UNION ALL
-                    //SELECT A.Deslocalizacion As Correo FROM gentercerolocaliza A
-                    //INNER JOIN conContrato C ON C.IdTercero=A.IdTercero
-                    //INNER JOIN  facFactura D ON D.IdContrato=C.IdContrato
-                    //LEFT JOIN concontratocorreo B ON  B.indhabilitado=1 and B.idcontrato=D.IdContrato  
-                    //WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.IdFactura=@idFactura";
-                    //                    SqlCommand cmdDatosCliente3 = new SqlCommand(qryDatosCliente3, connx);
-                    //                    cmdDatosCliente3.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
-                    //                    SqlDataReader rdDatosCliente3 = cmdDatosCliente3.ExecuteReader();
-                    //                    if (rdDatosCliente3.HasRows)
-                    //                    {
-                    //                        rdDatosCliente3.Read();
-                    //                        _correoCliente = rdDatosCliente3.GetString(0);
-                    //                    }
-                    //                    else
-                    //                    {
-                    //                        _correoCliente = " ";
-                    //                    } 
-                    #endregion
                     List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
                     NotificacionesItem notificaItem = new NotificacionesItem();
                     notificaItem.tipo = 1;
@@ -222,15 +163,35 @@ WHERE a.cod_cuen in (  select replace (val_camp, ';','') from gen_enti_dato wher
                             _valorIvaPesos = rdIvaFact.GetDecimal(0); /// valor del IVA de la Factura
                         }
                     }
+                    string qryPais = @"SELECT CodigoAlfa2 FROM GEN_DIVI_POLI a 
+LEFT JOIN GEN_DIVI_POLI b on substring(a.cod_dipo,1,3) = b.cod_dipo
+LEFT JOIN GEN_PAISES_DIAN c on c.idLugarSAHI = b.IdLugar
+WHERE a.IdLugar = @idLugar";
+                    SqlCommand cmdPais = new SqlCommand(qryPais, connx);
+                    cmdPais.Parameters.Add("@idLugar", SqlDbType.VarChar).Value = cliente.idLugar;
+                    SqlDataReader rdCodigoPais = cmdPais.ExecuteReader();
+                    if (rdCodigoPais.HasRows)
+                    {
+                        rdCodigoPais.Read();
+                        if (rdCodigoPais.IsDBNull(0))
+                        { codigoPais = "CO"; }
+                        else
+                        {
+                            codigoPais = rdCodigoPais.GetString(0);
+                        }
+                    }
+                    else
+                    {
+                        codigoPais = rdCodigoPais.GetString(0);
+                    }
                 }
-
                 Adquiriente adquirienteTmp = new Adquiriente();
                 adquirienteTmp.identificacion = cliente.NroDoc_Cliente;
                 adquirienteTmp.tipoIdentificacion = _tipoDocClienteDian;
                 adquirienteTmp.codigoInterno =cliente.IdTercero.ToString();
                 adquirienteTmp.razonSocial = cliente.NomTercero;
                 adquirienteTmp.nombreSucursal = cliente.NomTercero;
-                adquirienteTmp.correo = cliente.cuenta_correo.Trim();
+                adquirienteTmp.correo = cliente.cuenta_correo.Trim().Split(';')[0];
                 adquirienteTmp.telefono = cliente.telefono;
                 if (cliente.idRegimen.Equals("C"))
                 {
@@ -257,78 +218,133 @@ WHERE a.cod_cuen in (  select replace (val_camp, ';','') from gen_enti_dato wher
                 responsanbilidadesR.Add("R-12-PJ");
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
-                ubicacionCliente.pais = "CO";
-                ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
+                ubicacionCliente.pais = codigoPais;
+                ubicacionCliente.codigoMunicipio = "00000";
                 ubicacionCliente.departamento = cliente.Nombre_Depto;
+                ubicacionCliente.ciudad = cliente.Nom_Municipio;
                 ubicacionCliente.direccion = cliente.direccion;
                 adquirienteTmp.ubicacion = ubicacionCliente;
                 documentoF2.adquiriente = adquirienteTmp;
-
-                double TotalGravadoIva = 0;
-
                 List<AnticiposItem> anticiposWrk = new List<AnticiposItem>();
                 AnticiposItem anticipoWrk = new AnticiposItem();
                 anticipoWrk.comprobante = "22";
                 anticipoWrk.valorAnticipo = double.Parse(_ValPagos.ToString());
                 anticiposWrk.Add(anticipoWrk);
                 documentoF2.anticipos = anticiposWrk;
-                //************************************************************ Detalle de Factura por Administrativa ***********************************************************
+                //************************************************************ Detalle de Factura por Administrativa Moneda Extranjera ***********************************************************
                 using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     conexion01.Open();
-                    string strDetalleFac = @"SELECT b.numdocrespaldo,c.IdCuenta,c.num_regi,c.Cantidad,c.Descripcion,c.val_unit,c.val_total,c.val_unit_inte,c.cod_mone FROM cxcfacmanual a
+                    string strDetalleFac = @"SELECT top 1000 b.numdocrespaldo as factura,CONVERT(VARCHAR,c.IdCuenta)+'-'+CONVERT(varchar,C.num_regi) AS codProducto,c.Descripcion,c.Cantidad,c.val_unit,
+c.val_unit* c.Cantidad as valBruto,ISNULL(c.Vr_IVA, 0) AS ValorIva, ISNULL(c.Porcen_IVA, 0) as 'PorcentajeIva',c.*
+     FROM cxcfacmanual a
 INNER JOIN cxccuenta b on a.idcuenta = b.idcuenta
 INNER JOIN cxcfacmanualconc c on c.IdCuenta = a.idcuenta
-WHERE c.val_unit_inte is NOT null and NumDocRespaldo = @idFactura
-ORDER BY c.num_regi";
+WHERE c.val_unit_inte is NOT null and NumDocRespaldo = @idFactura ORDER BY c.num_regi";
                     SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                     cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
                     SqlDataReader rdDetalleFac = cmdDetalleFac.ExecuteReader();
                     if (rdDetalleFac.HasRows)
                     {
+                        #region MyRegion
+                        //Int16 nroLinea = 1;
+                        //while (rdDetalleFac.Read())
+                        //{
+                        //    tasaIva = ((double.Parse(_valorIvaPesos.ToString())) / (double.Parse(rdDetalleFac.GetDecimal(6).ToString())) * 100).TomarDecimales(2); ;
+                        //    tasaIva = Math.Round(tasaIva, 0);
+                        //    try
+                        //    {
+                        //        List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                        //        DetallesItem lineaProducto = new DetallesItem();
+                        //        lineaProducto.tipoDetalle = 1; // Linea Normal
+                        //        string codigoProducto = rdDetalleFac.GetInt32(1).ToString();
+                        //        lineaProducto.valorCodigoInterno = codigoProducto;
+                        //        lineaProducto.codigoEstandar = "999";
+                        //        lineaProducto.valorCodigoEstandar = codigoProducto;
+                        //        lineaProducto.descripcion = rdDetalleFac.GetString(4);
+                        //        lineaProducto.unidades = double.Parse(rdDetalleFac.GetInt32(3).ToString());
+                        //        lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
+                        //        lineaProducto.valorUnitarioBruto = double.Parse(rdDetalleFac.GetDecimal(7).ToString());
+                        //        ValBrutoProd = ValBrutoProd + (double.Parse(rdDetalleFac.GetDecimal(7).ToString()) * double.Parse(rdDetalleFac.GetInt32(3).ToString()));
+                        //        lineaProducto.valorBruto = double.Parse(rdDetalleFac.GetInt32(3).ToString()) * double.Parse(rdDetalleFac.GetDecimal(7).ToString());
+                        //        lineaProducto.valorBrutoMoneda = moneda;
+                        //        //detalleProductos.Add(lineaProducto);
+
+                        //        TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                        //        tributosWRKIva.id = "01";
+                        //        tributosWRKIva.nombre = "Iva";
+                        //        tributosWRKIva.esImpuesto = true;
+                        //        tributosWRKIva.porcentaje = double.Parse(tasaIva.ToString());
+
+                        //        tributosWRKIva.valorBase = double.Parse(rdDetalleFac.GetDecimal(7).ToString());
+                        //        _totalIvaProd = _totalIvaProd+((double.Parse(rdDetalleFac.GetDecimal(7).ToString()) * double.Parse(tasaIva.ToString())) / 100).TomarDecimales(2);
+
+                        //        tributosWRKIva.valorImporte = ((double.Parse(rdDetalleFac.GetDecimal(7).ToString()) * double.Parse(tasaIva.ToString()))/100).TomarDecimales(2);
+                        //        TotalGravadoIva = TotalGravadoIva + double.Parse(rdDetalleFac.GetDecimal(7).ToString());
+                        //        tributosWRKIva.tributoFijoUnidades = 0;
+                        //        tributosWRKIva.tributoFijoValorImporte = 0;
+                        //        listaTributos.Add(tributosWRKIva);
+
+                        //        lineaProducto.tributos = listaTributos;
+                        //        detalleProductos.Add(lineaProducto);
+                        //        nroLinea++;
+                        //    }
+                        //    catch (Exception sqlExp)
+                        //    {
+                        //        string error = $"Mensaje de Error:{sqlExp.Message}   Traza de la Pila:{sqlExp.StackTrace}";
+                        //        logFacturas.Warn($"Se ha presentado una Excepcion:{error}");
+                        //        throw;
+                        //    }
+                        //} 
+                        #endregion
                         Int16 nroLinea = 1;
                         while (rdDetalleFac.Read())
                         {
-
-                            tasaIva = ((double.Parse(_valorIvaPesos.ToString())) / (double.Parse(rdDetalleFac.GetDecimal(6).ToString())) * 100).TomarDecimales(2); ;
-                            tasaIva = Math.Round(tasaIva, 0);
                             try
                             {
-
-                                List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                                List<TibutosDetalle> listaTributos = new List<TibutosDetalle>(); //Tributos para lalinea de producto
                                 DetallesItem lineaProducto = new DetallesItem();
                                 lineaProducto.tipoDetalle = 1; // Linea Normal
-                                string codigoProducto = rdDetalleFac.GetInt32(1).ToString();
+                                string codigoProducto = rdDetalleFac.GetString(1);
+                                lineaProducto.descripcion = rdDetalleFac.GetString(2);
                                 lineaProducto.valorCodigoInterno = codigoProducto;
                                 lineaProducto.codigoEstandar = "999";
                                 lineaProducto.valorCodigoEstandar = codigoProducto;
-                                lineaProducto.descripcion = rdDetalleFac.GetString(4);
                                 lineaProducto.unidades = double.Parse(rdDetalleFac.GetInt32(3).ToString());
-                                lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
-                                lineaProducto.valorUnitarioBruto = double.Parse(rdDetalleFac.GetDecimal(7).ToString());
-                                ValBrutoProd = ValBrutoProd + (double.Parse(rdDetalleFac.GetDecimal(7).ToString()) * double.Parse(rdDetalleFac.GetInt32(3).ToString()));
-                                lineaProducto.valorBruto = double.Parse(rdDetalleFac.GetInt32(3).ToString()) * double.Parse(rdDetalleFac.GetDecimal(7).ToString());
-                                lineaProducto.valorBrutoMoneda = moneda;
-                                //detalleProductos.Add(lineaProducto);
-
-                                TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                                lineaProducto.unidadMedida = "94";
+                                lineaProducto.valorUnitarioBruto = double.Parse(rdDetalleFac.GetSqlMoney(14).ToString()).TomarDecimales(2);
+                                lineaProducto.valorBrutoMoneda = moneda;// "COP";
+                                double totalUnitario = lineaProducto.valorUnitarioBruto * lineaProducto.unidades;
+                                lineaProducto.valorBruto = totalUnitario.TomarDecimales(2);// double.Parse(rdDetalleFac.GetSqlDouble(18).ToString());
+                                ValorBruto += totalUnitario.TomarDecimales(2);// double.Parse(rdDetalleFac.GetSqlDouble(18).ToString());
+                                TibutosDetalle tributosWRKIva = new TibutosDetalle(); //Detalle de tributos, para el producto
                                 tributosWRKIva.id = "01";
                                 tributosWRKIva.nombre = "Iva";
                                 tributosWRKIva.esImpuesto = true;
-                                tributosWRKIva.porcentaje = double.Parse(tasaIva.ToString());
+                                tributosWRKIva.porcentaje = double.Parse(rdDetalleFac.GetInt32(16).ToString()).TomarDecimales(2);
+                                tributosWRKIva.valorBase = totalUnitario;// double.Parse(rdDetalleFac.GetSqlDouble(18).ToString());
 
-                                tributosWRKIva.valorBase = double.Parse(rdDetalleFac.GetDecimal(7).ToString());
-                                _totalIvaProd = _totalIvaProd+((double.Parse(rdDetalleFac.GetDecimal(7).ToString()) * double.Parse(tasaIva.ToString())) / 100).TomarDecimales(2);
-                                
-                                tributosWRKIva.valorImporte = ((double.Parse(rdDetalleFac.GetDecimal(7).ToString()) * double.Parse(tasaIva.ToString()))/100).TomarDecimales(2);
-                                TotalGravadoIva = TotalGravadoIva + double.Parse(rdDetalleFac.GetDecimal(7).ToString());
+                                tributosWRKIva.valorImporte = double.Parse(rdDetalleFac.GetSqlDouble(19).ToString()).TomarDecimales(2);
+
                                 tributosWRKIva.tributoFijoUnidades = 0;
                                 tributosWRKIva.tributoFijoValorImporte = 0;
                                 listaTributos.Add(tributosWRKIva);
-
                                 lineaProducto.tributos = listaTributos;
+                                if (rdDetalleFac.GetInt32(16) > 0)
+                                {
+                                    ValorTasaIva = rdDetalleFac.GetInt32(16);
+                                    TotalGravadoIva += totalUnitario;// double.Parse(rdDetalleFac.GetSqlMoney(14).ToString());
+                                    ValorTotalIva += double.Parse(rdDetalleFac.GetSqlDouble(19).ToString()).TomarDecimales(2);
+                                }
+                                else
+                                {
+                                    TotalExcentoIva += totalUnitario;// double.Parse(rdDetalleFac.GetSqlDouble(18).ToString());
+                                }
+
                                 detalleProductos.Add(lineaProducto);
                                 nroLinea++;
+
+                                // Para moneda extranjera:vr_Total_Inte-vr_IVA_Inte de la tabla
                             }
                             catch (Exception sqlExp)
                             {
@@ -345,46 +361,42 @@ ORDER BY c.num_regi";
                 }
 
                 documentoF2.detalles = detalleProductos;
-                List<TributosItem> tributosTMP = new List<TributosItem>();
+
+                List<TributosItem> tributosTMP = new List<TributosItem>(); //Segmento de Iva  pata Totales de Factura
                 List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
-                DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
-                {
-                    valorImporte = _totalIvaProd,
-                    valorBase = TotalGravadoIva,
-                    porcentaje =double.Parse( tasaIva.ToString())
-                };
-                tributosDetalle.Add(detalleTributos);
+                DetalleTributos detalleTributosItem = new DetalleTributos(); // Un Objeto por cada Tipo de Iva
+                //***estos valores se deben tomar del select o Tabla
+                //double valorImporte = double.Parse(_valorIva.ToString());
+                //double valorBase = double.Parse((_Valtotal - _valorIva).ToString());
+                //double porcentaje = Math.Round(((valorImporte / valorBase) * 100).TomarDecimales(2), 0);
+                //detalleTributosItem.valorImporte = valorImporte;
+                //detalleTributosItem.valorBase = valorBase;
+                //detalleTributosItem.porcentaje = porcentaje;
+                detalleTributosItem.valorImporte = ValorTotalIva;
+                detalleTributosItem.valorBase = TotalGravadoIva;
+                detalleTributosItem.porcentaje = double.Parse(ValorTasaIva.ToString()).TomarDecimales(2);
+                tributosDetalle.Add(detalleTributosItem);
                 TributosItem itemTributo = new TributosItem()
                 {
                     id = "01", //Total de Iva 
                     nombre = "Iva",
                     esImpuesto = true,
-                    valorImporteTotal = _totalIvaProd,
-                    detalles = tributosDetalle // DEtalle de los Ivas
+                    valorImporteTotal = ValorTotalIva,
+                    detalles = tributosDetalle // Detalle de los Ivas
                 };
                 tributosTMP.Add(itemTributo);
-                documentoF2.tributos = tributosTMP;
-                ///<summary>
-                ///Inicio de Totales de la Factura
-                /// </summary>
+                documentoF2.tributos = tributosTMP;///
                 Totales totalesTmp = new Totales()
                 {
-                    valorBruto = ValBrutoProd,
+                    valorBruto = ValorBruto,   // double.Parse(ValorBruto.ToString()),
                     valorAnticipos = double.Parse(_ValPagos.ToString()),
-                    valorTotalSinImpuestos = TotalGravadoIva,
-                    valorTotalConImpuestos =( TotalGravadoIva+ _totalIvaProd),
-                    valorNeto =(ValBrutoProd - double.Parse(_ValPagos.ToString()) + _totalIvaProd)
+                    valorTotalSinImpuestos = ValorBruto,
+                    valorTotalConImpuestos = ValorBruto - double.Parse(_ValPagos.ToString()) + double.Parse(ValorTotalIva.ToString()),
+                    valorNeto = ValorBruto - double.Parse(_ValPagos.ToString()) + double.Parse(ValorTotalIva.ToString()) //double.Parse(_ValCobrar.ToString())
                 };
-
-                //Totales totalesTmp = new Totales()
-                //{
-                //    valorBruto = double.Parse(_Valtotal.ToString()),
-                //    valorAnticipos = double.Parse(_ValPagos.ToString()),
-                //    valorTotalSinImpuestos = TotalGravadoIva,
-                //    valorTotalConImpuestos = double.Parse(_Valtotal.ToString()) + double.Parse(_ValImpuesto.ToString()),
-                //    valorNeto = double.Parse(_ValCobrar.ToString())
-                //};
                 documentoF2.totales = totalesTmp;
+                logFacturas.Info("Numero de Productos procesados, para JSon:" + detalleProductos.Count);
+
                 double tasa = 0;
                 string monedaDestino = String.Empty;
                 DateTime fechaTrm = DateTime.Now;
@@ -430,20 +442,6 @@ ORDER BY c.num_regi";
                     string Clave = Properties.Settings.Default.clave;
                     string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
                     request.Headers.Add("Authorization", "Basic " + credenciales);
-
-                    //string urlConsumo = Properties.Settings.Default.urlFacturaElectronica + Properties.Settings.Default.recursoFacturaE;
-                    //logFacturas.Info("URL de Request:" + urlConsumo);
-                    //HttpWebRequest request = WebRequest.Create(urlConsumo) as HttpWebRequest;
-                    //request.Timeout = 60 * 1000;
-                    //string facturaJson = JsonConvert.SerializeObject(facturaEnviar);
-                    //logFacturas.Info("Json de la Factura:" + facturaJson);
-                    //request.Method = "POST";
-                    //request.ContentType = "application/json";
-                    //string Usuario = Properties.Settings.Default.usuario;
-                    //string Clave = Properties.Settings.Default.clave;
-                    //string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
-                    //request.Headers.Add("Authorization", "Basic " + credenciales);
-
                     Byte[] data = Encoding.UTF8.GetBytes(facturaJson);
 
                     Stream st = request.GetRequestStream();
@@ -528,10 +526,10 @@ VALUES(@IdFactura, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
                                                         cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroFactura;
-                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                        cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                         //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

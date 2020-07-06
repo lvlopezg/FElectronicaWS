@@ -14,12 +14,12 @@ using System.Text;
 
 namespace FElectronicaWS.Servicios
 {
-	public class facturaXPAQ : IfacturaXPAQ
-	{
-		private static Logger logFacturas = LogManager.GetCurrentClassLogger();
-		public string GetData(int nroFactura, int idCliente, int nroAtencion, string urlPdfFactura)
-		{
-			logFacturas.Info($"Se recibe factura con siguientes datos:Factura por Paquete:{ nroFactura}   IdCliente:{ idCliente}  nroAtencion:{ nroAtencion} urlPdf:{ urlPdfFactura}");
+    public class facturaXPAQ : IfacturaXPAQ
+    {
+        private static Logger logFacturas = LogManager.GetCurrentClassLogger();
+        public string GetData(int nroFactura, int idCliente, int nroAtencion, string urlPdfFactura)
+        {
+            logFacturas.Info($"Se recibe factura con siguientes datos:Factura por Paquete:{ nroFactura}   IdCliente:{ idCliente}  nroAtencion:{ nroAtencion} urlPdf:{ urlPdfFactura}");
             try
             {
                 Int32 _idContrato = 0;
@@ -242,7 +242,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                 adquirienteTmp.codigoInterno = _idTercero.ToString();
                 adquirienteTmp.razonSocial = _razonSocial;
                 adquirienteTmp.nombreSucursal = _razonSocial;
-                adquirienteTmp.correo = _correoCliente.Trim();
+                adquirienteTmp.correo = _correoCliente.Trim().Split(';')[0];
                 adquirienteTmp.telefono = _telefonoCliente;
 
                 if (_RegimenFiscal.Equals("C"))
@@ -314,17 +314,17 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
 
                 //************************************************************ Detalle de Factura
                 using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
-				{
-					conexion01.Open();
-					string qryFactura = "SELECT IdFactura,NumFactura,IdDestino,IdTransaccion,IdPlan,IdContrato,ValTotal,ValDescuento,ValDescuentoT,ValPagos,ValImpuesto,ValCobrar,IndNotaCred,IndTipoFactura,CodEnti,CodEsor,FecFactura,Ruta,IdCausal,IdUsuarioR,IndHabilitado,IdNoFacturado,valPos,valNoPos FROM  facFactura WHERE idFactura=@idFactura AND idDestino=@idAtencion";
-					SqlCommand cmdFactura = new SqlCommand(qryFactura, conexion01);
-					cmdFactura.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
-					cmdFactura.Parameters.Add("@idAtencion", SqlDbType.Int).Value = nroAtencion;
-					SqlDataReader rdFactura = cmdFactura.ExecuteReader();
-					if (rdFactura.HasRows)
-					{
-						rdFactura.Read();
-						string strDetalleFac = @"SELECT   isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
+                {
+                    conexion01.Open();
+                    string qryFactura = "SELECT IdFactura,NumFactura,IdDestino,IdTransaccion,IdPlan,IdContrato,ValTotal,ValDescuento,ValDescuentoT,ValPagos,ValImpuesto,ValCobrar,IndNotaCred,IndTipoFactura,CodEnti,CodEsor,FecFactura,Ruta,IdCausal,IdUsuarioR,IndHabilitado,IdNoFacturado,valPos,valNoPos FROM  facFactura WHERE idFactura=@idFactura AND idDestino=@idAtencion";
+                    SqlCommand cmdFactura = new SqlCommand(qryFactura, conexion01);
+                    cmdFactura.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+                    cmdFactura.Parameters.Add("@idAtencion", SqlDbType.Int).Value = nroAtencion;
+                    SqlDataReader rdFactura = cmdFactura.ExecuteReader();
+                    if (rdFactura.HasRows)
+                    {
+                        rdFactura.Read();
+                        string strDetalleFac = @"SELECT   isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
 isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
@@ -400,77 +400,77 @@ LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado =
 WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura
 ORDER BY 4";
 
-////////                        string strDetalleFac = @"SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
-////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
-////////FROM facfactura a
-////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
-////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
-////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
-////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
-////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
-////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
-////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo IN (8,12)
-////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino
-////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
-////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
-////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-////////WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=@idFactura
-////////UNION ALL
-////////SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
-////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
-////////FROM facfactura a
-////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
-////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
-////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
-////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
-////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
-////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
-////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
-////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal=2513
-////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
-////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
-////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-////////WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=@idFactura
-////////UNION ALL
-////////SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
-////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
-////////FROM facfactura a
-////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
-////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
-////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
-////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
-////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
-////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
-////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
-////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal<>2513
-////////LEFT JOIN vwFacProcPrincAsocPaq PQ on PQ.idfactura = a.idfactura and g.IdProcPrincipal=PQ.IdProcPrincipal 
-////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
-////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
-////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-////////WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura
-////////ORDER BY 4";
+                        ////////                        string strDetalleFac = @"SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
+                        ////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+                        ////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
+                        ////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
+                        ////////FROM facfactura a
+                        ////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
+                        ////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
+                        ////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
+                        ////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
+                        ////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
+                        ////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+                        ////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo IN (8,12)
+                        ////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino
+                        ////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
+                        ////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
+                        ////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
+                        ////////WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=@idFactura
+                        ////////UNION ALL
+                        ////////SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
+                        ////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+                        ////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
+                        ////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
+                        ////////FROM facfactura a
+                        ////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
+                        ////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
+                        ////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
+                        ////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
+                        ////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
+                        ////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+                        ////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
+                        ////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal=2513
+                        ////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
+                        ////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
+                        ////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
+                        ////////WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=@idFactura
+                        ////////UNION ALL
+                        ////////SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
+                        ////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+                        ////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
+                        ////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
+                        ////////FROM facfactura a
+                        ////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
+                        ////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
+                        ////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
+                        ////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
+                        ////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
+                        ////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+                        ////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
+                        ////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal<>2513
+                        ////////LEFT JOIN vwFacProcPrincAsocPaq PQ on PQ.idfactura = a.idfactura and g.IdProcPrincipal=PQ.IdProcPrincipal 
+                        ////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
+                        ////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
+                        ////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
+                        ////////WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura
+                        ////////ORDER BY 4";
 
 
 
 
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
 
-						cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);
-						SqlDataReader rdDetalleFac = cmdDetalleFac.ExecuteReader();
-						if (rdDetalleFac.HasRows)
-						{
+                        cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);
+                        SqlDataReader rdDetalleFac = cmdDetalleFac.ExecuteReader();
+                        if (rdDetalleFac.HasRows)
+                        {
                             Int16 nroLinea = 1;
 
                             while (rdDetalleFac.Read()) // Armar Detalle Fase II
-							{
-								try
-								{
+                            {
+                                try
+                                {
                                     List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
                                     DetallesItem lineaProducto = new DetallesItem();
                                     lineaProducto.tipoDetalle = 1; // Linea Normal
@@ -499,12 +499,12 @@ ORDER BY 4";
                                     tributosWRKIva.porcentaje = 0;
                                     tributosWRKIva.valorBase = double.Parse(rdDetalleFac.GetDouble(5).ToString());
                                     tributosWRKIva.valorImporte = rdDetalleFac.GetDouble(5) * 0;
-                                    TotalGravadoIva= TotalGravadoIva+ rdDetalleFac.GetDouble(5);
+                                    TotalGravadoIva = TotalGravadoIva + rdDetalleFac.GetDouble(5);
                                     tributosWRKIva.tributoFijoUnidades = 0;
                                     tributosWRKIva.tributoFijoValorImporte = 0;
                                     listaTributos.Add(tributosWRKIva);
 
-                                    
+
                                     TibutosDetalle tributosWRKIca = new TibutosDetalle();
                                     tributosWRKIca.id = "02";
                                     tributosWRKIca.nombre = "ICA";
@@ -512,7 +512,7 @@ ORDER BY 4";
                                     tributosWRKIca.porcentaje = 0;
                                     tributosWRKIca.valorBase = double.Parse(rdDetalleFac.GetDouble(5).ToString());
                                     tributosWRKIca.valorImporte = rdDetalleFac.GetDouble(5) * 0;
-                                    TotalGravadoIca= TotalGravadoIca + rdDetalleFac.GetDouble(5);
+                                    TotalGravadoIca = TotalGravadoIca + rdDetalleFac.GetDouble(5);
                                     tributosWRKIca.tributoFijoUnidades = 0;
                                     tributosWRKIca.tributoFijoValorImporte = 0;
 
@@ -521,23 +521,23 @@ ORDER BY 4";
                                     detalleProductos.Add(lineaProducto);
                                     nroLinea++;
                                 }
-								catch (Exception sqlExp)
-								{
-									logFacturas.Warn($"Se ha presentado Excepcion: {sqlExp.Message }    Pilade llamados:{sqlExp.StackTrace}");
-									throw;
-								}
-							}
-						}
-						else // Si No  hay Detalle de Productos
-						{
-							logFacturas.Info("No se encontro Detalle de productos para la factura. " + strDetalleFac);
-						}
-					}
-					else // No se encuentra Informacion de la Factura y Atencion
-					{
-						logFacturas.Info("No se encontro Informacion de Factura y Atencion En  facFactura." + qryFactura + "      Parametros::::  Numero Factura:" + nroFactura + "     Numero de Atencion:" + nroAtencion);
-					}
-				}
+                                catch (Exception sqlExp)
+                                {
+                                    logFacturas.Warn($"Se ha presentado Excepcion: {sqlExp.Message }    Pilade llamados:{sqlExp.StackTrace}");
+                                    throw;
+                                }
+                            }
+                        }
+                        else // Si No  hay Detalle de Productos
+                        {
+                            logFacturas.Info("No se encontro Detalle de productos para la factura. " + strDetalleFac);
+                        }
+                    }
+                    else // No se encuentra Informacion de la Factura y Atencion
+                    {
+                        logFacturas.Info("No se encontro Informacion de Factura y Atencion En  facFactura." + qryFactura + "      Parametros::::  Numero Factura:" + nroFactura + "     Numero de Atencion:" + nroAtencion);
+                    }
+                }
                 List<TributosItem> tributosTMP = new List<TributosItem>();
                 List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
                 DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
@@ -565,29 +565,33 @@ ORDER BY 4";
                     valorBruto = double.Parse(_Valtotal.ToString()),
                     valorAnticipos = double.Parse(_ValPagos.ToString()),
                     valorTotalSinImpuestos = double.Parse(_Valtotal.ToString()),
-                    valorTotalConImpuestos =TotalGravadoIva,
+                    valorTotalConImpuestos = TotalGravadoIva,
                     valorNeto = double.Parse(_ValCobrar.ToString())
                 };
                 documentoF2.totales = totalesTmp;
                 documentoF2.detalles = detalleProductos;
                 try
-				{
+                {
                     string urlConsumo = Properties.Settings.Default.urlFacturaElectronica;// + Properties.Settings.Default.recursoFacturaE;
-					logFacturas.Info("URL de Request:" + urlConsumo);
-					HttpWebRequest request = WebRequest.Create(urlConsumo) as HttpWebRequest;
+                    logFacturas.Info("URL de Request:" + urlConsumo);
+                    HttpWebRequest request = WebRequest.Create(urlConsumo) as HttpWebRequest;
 
                     documentoF2.documento = facturaEnviar;
                     string facturaJson = JsonConvert.SerializeObject(documentoF2);
                     logFacturas.Info("Json de la Factura:" + facturaJson);
                     request.Method = "POST";
-					request.ContentType = "application/json";
+                    request.ContentType = "application/json";
 
-                    string Usuario = "administrador";
-                    string Clave = "Transfiriendo@2016";
+                    //string Usuario = "administrador";
+                    //string Clave = "Transfiriendo@2016";
+
+                    string Usuario = Properties.Settings.Default.usuario;
+                    string Clave = Properties.Settings.Default.clave;
+
                     string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
                     request.Headers.Add("Authorization", "Basic " + credenciales);
 
-                    Byte[] data = Encoding.UTF8.GetBytes(facturaJson);
+                    Byte[ ] data = Encoding.UTF8.GetBytes(facturaJson);
 
                     Stream st = request.GetRequestStream();
                     st.Write(data, 0, data.Length);
@@ -598,12 +602,12 @@ ORDER BY 4";
                     valores = request.Headers;
 
                     // Pone todos los nombres en un Arreglo
-                    string[] arr1 = valores.AllKeys;
+                    string[ ] arr1 = valores.AllKeys;
                     for (loop1 = 0; loop1 < arr1.Length; loop1++)
                     {
                         logFacturas.Info("Key: " + arr1[loop1] + "<br>");
                         // Todos los valores
-                        string[] arr2 = valores.GetValues(arr1[loop1]);
+                        string[ ] arr2 = valores.GetValues(arr1[loop1]);
                         for (loop2 = 0; loop2 < arr2.Length; loop2++)
                         {
                             logFacturas.Info("Value " + loop2 + ": " + arr2[loop2]);
@@ -669,10 +673,10 @@ VALUES(@IdFactura, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
                                                         cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroFactura;
-                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                        cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                         //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");
@@ -736,7 +740,7 @@ VALUES(@IdFactura, @CodError, @DescripcionError, @FecRegistro)";
                             cmdInsertarError.Parameters.Add("@FecRegistro", SqlDbType.DateTime).Value = DateTime.Parse(respuesta.fecha);
                             if (cmdInsertarError.ExecuteNonQuery() > 0)
                             {
-                                valorRpta ="99";
+                                valorRpta = "99";
                                 string qryDetErr = @"INSERT INTO facFacturaTempWSErrorDetalle (IdFactura,CodError,consecutivo,FecRegistro,DescripcionError) 
 VALUES(@IdFactura, @CodError, @consecutivo, @FecRegistro, @DescripcionError)";
                                 SqlCommand cmdDetErr = new SqlCommand(qryDetErr, conn);
@@ -774,71 +778,71 @@ VALUES(@IdFactura, @CodError, @consecutivo, @FecRegistro, @DescripcionError)";
 
                     return valorRpta;
                 }
-				catch (WebException wExp)
-				{
-					logFacturas.Warn("Se ha presentado una Excepcion:" + wExp.Message + "Pila de LLamadas:" + wExp.StackTrace);
-					return "99";
-				}
-				catch (NotSupportedException nsExp01)
-				{
-					logFacturas.Warn("Se ha presentado una excepcion Http:" + nsExp01.Message + " Pila de LLamados:" + nsExp01.StackTrace);
-					return "94";
-				}
-				catch (ProtocolViolationException pexp01)
-				{
-					logFacturas.Warn("Se ha presentado una excepcion Http:" + pexp01.Message + " Pila de LLamados:" + pexp01.StackTrace);
-					return "95";
-				}
-				catch (InvalidOperationException inExp01)
-				{
-					logFacturas.Warn("Se ha presentado una excepcion Http:" + inExp01.Message + " Pila de LLamados:" + inExp01.StackTrace);
-					return "96";
+                catch (WebException wExp)
+                {
+                    logFacturas.Warn("Se ha presentado una Excepcion:" + wExp.Message + "Pila de LLamadas:" + wExp.StackTrace);
+                    return "99";
+                }
+                catch (NotSupportedException nsExp01)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + nsExp01.Message + " Pila de LLamados:" + nsExp01.StackTrace);
+                    return "94";
+                }
+                catch (ProtocolViolationException pexp01)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + pexp01.Message + " Pila de LLamados:" + pexp01.StackTrace);
+                    return "95";
+                }
+                catch (InvalidOperationException inExp01)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + inExp01.Message + " Pila de LLamados:" + inExp01.StackTrace);
+                    return "96";
 
-				}
-				catch (HttpListenerException httpExp)
-				{
-					logFacturas.Warn("Se ha presentado una excepcion Http:" + httpExp.Message + " Pila de LLamados:" + httpExp.StackTrace);
-					return "97";
-				}
+                }
+                catch (HttpListenerException httpExp)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion Http:" + httpExp.Message + " Pila de LLamados:" + httpExp.StackTrace);
+                    return "97";
+                }
 
-				catch (Exception e)
-				{
-					logFacturas.Warn("Se ha presentado una excepcion:" + e.Message + " Pila de LLamados:" + e.StackTrace);
-					return "98";
-				}
-			}
-			catch (WebException wExp)
-			{
-				logFacturas.Warn("Se ha presentado una Excepcion:" + wExp.Message + "Pila de LLamadas:" + wExp.StackTrace);
-				return "99";
-			}
-			catch (NotSupportedException nsExp01)
-			{
-				logFacturas.Warn("Se ha presentado una excepcion Http:" + nsExp01.Message + " Pila de LLamados:" + nsExp01.StackTrace);
-				return "94";
-			}
-			catch (ProtocolViolationException pexp01)
-			{
-				logFacturas.Warn("Se ha presentado una excepcion Http:" + pexp01.Message + " Pila de LLamados:" + pexp01.StackTrace);
-				return "95";
-			}
-			catch (InvalidOperationException inExp01)
-			{
-				logFacturas.Warn("Se ha presentado una excepcion Http:" + inExp01.Message + " Pila de LLamados:" + inExp01.StackTrace);
-				return "96";
+                catch (Exception e)
+                {
+                    logFacturas.Warn("Se ha presentado una excepcion:" + e.Message + " Pila de LLamados:" + e.StackTrace);
+                    return "98";
+                }
+            }
+            catch (WebException wExp)
+            {
+                logFacturas.Warn("Se ha presentado una Excepcion:" + wExp.Message + "Pila de LLamadas:" + wExp.StackTrace);
+                return "99";
+            }
+            catch (NotSupportedException nsExp01)
+            {
+                logFacturas.Warn("Se ha presentado una excepcion Http:" + nsExp01.Message + " Pila de LLamados:" + nsExp01.StackTrace);
+                return "94";
+            }
+            catch (ProtocolViolationException pexp01)
+            {
+                logFacturas.Warn("Se ha presentado una excepcion Http:" + pexp01.Message + " Pila de LLamados:" + pexp01.StackTrace);
+                return "95";
+            }
+            catch (InvalidOperationException inExp01)
+            {
+                logFacturas.Warn("Se ha presentado una excepcion Http:" + inExp01.Message + " Pila de LLamados:" + inExp01.StackTrace);
+                return "96";
 
-			}
-			catch (HttpListenerException httpExp)
-			{
-				logFacturas.Warn("Se ha presentado una excepcion Http:" + httpExp.Message + " Pila de LLamados:" + httpExp.StackTrace);
-				return "97";
-			}
+            }
+            catch (HttpListenerException httpExp)
+            {
+                logFacturas.Warn("Se ha presentado una excepcion Http:" + httpExp.Message + " Pila de LLamados:" + httpExp.StackTrace);
+                return "97";
+            }
 
-			catch (Exception e)
-			{
-				logFacturas.Warn("Se ha presentado una excepcion:" + e.Message + " Pila de LLamados:" + e.StackTrace);
-				return "98";
-			}
-		}
-	}
+            catch (Exception e)
+            {
+                logFacturas.Warn("Se ha presentado una excepcion:" + e.Message + " Pila de LLamados:" + e.StackTrace);
+                return "98";
+            }
+        }
+    }
 }

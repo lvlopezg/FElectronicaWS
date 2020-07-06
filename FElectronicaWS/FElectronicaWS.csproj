@@ -94,8 +94,10 @@
     <Content Include="Servicios\facturaXREL.svc" />
     <Content Include="Servicios\facturaXRELParticular.svc" />
     <Content Include="Servicios\notaCredito.svc" />
+    <Content Include="Servicios\NotaCreditoEspecial.svc" />
     <Content Include="Servicios\notaCreditoParticular.svc" />
     <Content Include="Servicios\notaDebito.svc" />
+    <Content Include="Servicios\NotaDebitoEspecial.svc" />
     <Content Include="Servicios\notaDebitoParticular.svc" />
     <Content Include="Servicios\notaInternacional.svc" />
     <Content Include="Web.config" />
@@ -172,14 +174,22 @@
     <Compile Include="Contratos\IfacturaXRELParticular.cs" />
     <Compile Include="Contratos\InotaCreditoParticular.cs" />
     <Compile Include="Contratos\InotaDebitoParticular.cs" />
+    <Compile Include="Contratos\INotaCreditoEspecial.cs" />
+    <Compile Include="Contratos\INotaDebitoEspecial.cs" />
     <Compile Include="Servicios\notaCredito.svc.cs">
       <DependentUpon>notaCredito.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Servicios\NotaCreditoEspecial.svc.cs">
+      <DependentUpon>NotaCreditoEspecial.svc</DependentUpon>
     </Compile>
     <Compile Include="Servicios\notaCreditoParticular.svc.cs">
       <DependentUpon>notaCreditoParticular.svc</DependentUpon>
     </Compile>
     <Compile Include="Servicios\notaDebito.svc.cs">
       <DependentUpon>notaDebito.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Servicios\NotaDebitoEspecial.svc.cs">
+      <DependentUpon>NotaDebitoEspecial.svc</DependentUpon>
     </Compile>
     <Compile Include="Servicios\notaDebitoParticular.svc.cs">
       <DependentUpon>notaDebitoParticular.svc</DependentUpon>

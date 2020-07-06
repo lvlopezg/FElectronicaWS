@@ -298,7 +298,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     adquirienteTmp.codigoInterno = cliente.IdTercero.ToString();
                     adquirienteTmp.razonSocial = $"{cliente.NomCliente} {cliente.ApeCliente}";
                     adquirienteTmp.nombreSucursal = $"{cliente.NomCliente} {cliente.ApeCliente}";
-                    adquirienteTmp.correo = cliente.cuenta_correo.Trim();
+                    adquirienteTmp.correo = cliente.cuenta_correo.Trim().Split(';')[0];
                     adquirienteTmp.telefono = cliente.Nro_Telefono;
 
                     if (cliente.idRegimen.Equals("C"))
@@ -333,7 +333,14 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     documentoF2.adquiriente = adquirienteTmp;
                     double TotalGravadoIva = 0;
                     //double TotalGravadoIca = 0;
-
+                    List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
+                    NotificacionesItem notificaItem = new NotificacionesItem();
+                    notificaItem.tipo = 1;
+                    List<string> valorNotificacion = new List<string>();
+                    valorNotificacion.Add(cliente.cuenta_correo.Trim());
+                    notificaItem.valor = valorNotificacion;
+                    notificaciones.Add(notificaItem);
+                    NotaCreditoEnviar.notificaciones = notificaciones;
                     //************************************************************ Detalle de Nota Credito   ***********************************************************
                     using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                     {
@@ -589,11 +596,11 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                         cmdInsertarAdvertencia.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
                                                         foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                         {
-                                                            cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroNotaCredito;
-                                                            cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
+                                                            cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaCredito;
+                                                            cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                             //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                             cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                            cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                            cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                             if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                             {
                                                                 logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");
