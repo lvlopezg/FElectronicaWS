@@ -267,7 +267,23 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = "CO";
@@ -327,7 +343,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                         string strDetalleFac = @"SELECT   isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
+isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv,O.idOrden
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  admatencion c on a.iddestino=c.idatencion
@@ -335,17 +351,18 @@ INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo IN (8,12)
 INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=@idFactura
+WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=@idFactura ORDER BY A.IdFactura,o.Idorden
 UNION ALL
 SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
+isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv,O.idOrden
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  admatencion c on a.iddestino=c.idatencion
@@ -353,17 +370,18 @@ INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12,5)
 INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal=2513
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=@idFactura
+WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=@idFactura ORDER BY A.IdFactura,o.Idorden
 UNION ALL
 SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
+isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv,O.idOrden
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  admatencion c on a.iddestino=c.idatencion
@@ -371,18 +389,19 @@ INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12,5)
 INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal<>2513
 LEFT JOIN vwFacProcPrincAsocPaq PQ on PQ.idfactura = a.idfactura and g.IdProcPrincipal=PQ.IdProcPrincipal 
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura
+WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND a.idfactura=@idFactura ORDER BY A.IdFactura,o.Idorden
 UNION ALL
 SELECT  isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
+isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv,O.idOrden
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  admatencion c on a.iddestino=c.idatencion
@@ -390,6 +409,7 @@ INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
 INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino
 INNER JOIN  (   select distinct IdMovimiento,IdProductoCx,IdProcPrincipal from  facMovimientoDetCx  )  GX ON GX.IdMovimiento=g.IdMovimiento AND GX.IdProductoCx=f.IdProducto
@@ -398,7 +418,7 @@ LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.i
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
 WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura
-ORDER BY 4";
+ORDER BY A.IdFactura,o.Idorden";
 
                         ////////                        string strDetalleFac = @"SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
                         ////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,

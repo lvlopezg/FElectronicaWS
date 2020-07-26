@@ -360,7 +360,24 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
+
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = "CO";
@@ -432,13 +449,14 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                         string strDetalleFac = @"SELECT /*isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,*/
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio,SUM(f.Cantidad) as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv,
+SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv,O.idOrden
 /*g.iddestino,d.idcliente,d.NumDocumento,d.nomCliente,d.Apecliente,*/
 p.idProducto,p.CodProducto,p.nomproducto/*g.idMovimiento,f.ValDescuento  */
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
 INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento 
 INNER JOIN  admatencion c on g.iddestino=c.idatencion
@@ -452,7 +470,9 @@ GROUP BY
 /*isnull(h.NumAutorizacionInicial,'0'),*/
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )),
 upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal, 
-/*g.iddestino,d.idcliente,d.NumDocumento,d.nomCliente,d.Apecliente,*/p.idProducto,p.CodProducto,p.nomproducto/*,g.idMovimiento,f.ValDescuento*/";
+/*g.iddestino,d.idcliente,d.NumDocumento,d.nomCliente,d.Apecliente,*/p.idProducto,p.CodProducto,p.nomproducto/*,g.idMovimiento,f.ValDescuento*/
+ORDER BY A.IdFactura,o.Idorden
+";
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);
                         SqlDataReader rdDetalleFac = cmdDetalleFac.ExecuteReader();

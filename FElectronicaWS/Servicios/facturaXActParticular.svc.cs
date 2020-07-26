@@ -35,7 +35,7 @@ namespace FElectronicaWS.Servicios
                 Decimal _valPos = 0;
                 Decimal _valNoPos = 0;
                 //Int32 _IdUsuarioR = 0;
-                //Int32 _idTercero = 0;
+                Int32 _idTercero = 0;
                 //string _usrNombre = string.Empty;
                 //string _usrNumDocumento = string.Empty;
                 //Byte _usrIdTipoDoc = 0;
@@ -78,6 +78,7 @@ WHERE IdFactura =@nroFactura";
                     if (rdFacturaEnc.HasRows)
                     {
                         rdFacturaEnc.Read();
+                        _idTercero = rdFacturaEnc.GetInt32(14);
                         _Valtotal = Math.Round(rdFacturaEnc.GetDecimal(1), 2);
                         _ValDescuento = Math.Round(rdFacturaEnc.GetDecimal(2), 2);
                         _ValDescuentoT = Math.Round(rdFacturaEnc.GetDecimal(3), 2);
@@ -190,7 +191,24 @@ WHERE IdFactura =@nroFactura";
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
+
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = "CO";
@@ -217,7 +235,7 @@ upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto E
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
 isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv,
 a.IdFactura,F.IdProducto,p.codproducto,p.NomProducto,F.IdMovimiento,F.ValDescuento,F.CantidadFNC,F.IdTasaVenta,F.ValTasa,F.ValCuotaMod,F.indPos,F.Regcum, p.IdProductoTipo,
---dbo.unidadProducto (p.IdProducto,p.IdProductoTipo) as 'Unidad'
+--dbo.unidadProducto (p.IdProducto,p.IdProductoTipo) as 'Unidad',O.idOrden
 'Unidad' as 'Unidad'
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
@@ -226,12 +244,13 @@ INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
+INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
 INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino 
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura";
+WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o.Idorden";
                         logFacturas.Info("consulta de Productos:" + strDetalleFac);
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         logFacturas.Info("Nro Factura:" + rdFactura.GetInt32(0));

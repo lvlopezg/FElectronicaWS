@@ -37,7 +37,7 @@ namespace FElectronicaWS.Servicios
                 //Decimal _valPos = 0;
                 //Decimal _valNoPos = 0;
                 //Int32 _IdUsuarioR = 0;
-                //Int32 _idTercero = 0;
+                Int32 _idTercero = 0;
                 //string _usrNombre = string.Empty;
                 //string _usrNumDocumento = string.Empty;
                 //Byte _usrIdTipoDoc = 0;
@@ -182,6 +182,7 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                     if (rdNotaDebito.HasRows)
                     {
                         rdNotaDebito.Read();
+                        _idTercero = rdNotaDebito.GetInt32(7);
                         _idMovimiento = rdNotaDebito.GetInt32(14);
                         var valorTNota = rdNotaDebito["ValMonto"];
                         _Valtotal = Decimal.Parse(valorTNota.ToString());
@@ -334,7 +335,24 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
+
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = "CO";
