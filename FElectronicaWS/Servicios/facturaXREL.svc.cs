@@ -446,12 +446,10 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     if (rdFactura.HasRows)
                     {
                         rdFactura.Read();
-                        string strDetalleFac = @"SELECT /*isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,*/
+                        string strDetalleFac = @"SELECT 
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
 upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio,SUM(f.Cantidad) as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv,O.idOrden
-/*g.iddestino,d.idcliente,d.NumDocumento,d.nomCliente,d.Apecliente,*/
-p.idProducto,p.CodProducto,p.nomproducto/*g.idMovimiento,f.ValDescuento  */
+SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv, p.idProducto,p.CodProducto,p.nomproducto,O.idOrden
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
@@ -467,12 +465,9 @@ LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
 WHERE a.IndTipoFactura='RAC' AND  a.idfactura=@idFactura
 GROUP BY 
-/*isnull(h.NumAutorizacionInicial,'0'),*/
-upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )),
-upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal, 
-/*g.iddestino,d.idcliente,d.NumDocumento,d.nomCliente,d.Apecliente,*/p.idProducto,p.CodProducto,p.nomproducto/*,g.idMovimiento,f.ValDescuento*/
-ORDER BY A.IdFactura,o.Idorden
-";
+upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )),upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal, 
+p.idProducto,p.CodProducto,p.nomproducto,o.Idorden
+ORDER BY o.Idorden";
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);
                         SqlDataReader rdDetalleFac = cmdDetalleFac.ExecuteReader();
