@@ -56,7 +56,7 @@ namespace FElectronicaWS.Servicios
                 FormaPago formaPagoTmp = new FormaPago();
                 documentoRoot documentoF2 = new documentoRoot();
                 Documento facturaEnviar = new Documento();
-                facturaEnviar.identificadorTransaccion = "3464d2c5-c24b-464e-ad46-da9c6cd94de3";
+                facturaEnviar.identificadorTransaccion = "3462c5-c24b-464e-ad46-da9c6cd94de3";
                 facturaEnviar.URLPDF = urlPdfFactura;
                 facturaEnviar.NITFacturador = Properties.Settings.Default.NitHusi;
                 facturaEnviar.prefijo = Properties.Settings.Default.Prefijo;

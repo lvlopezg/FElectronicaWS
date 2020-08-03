@@ -446,17 +446,16 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     if (rdFactura.HasRows)
                     {
                         rdFactura.Read();
-                        string strDetalleFac = @"SELECT 
-upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio,SUM(f.Cantidad) as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv, p.idProducto,p.CodProducto,p.nomproducto,O.idOrden
+                        string strDetalleFac = @"SELECT UNI.Cod_Servicio,UNI.Des_Servicio,UNI.Cantidad,UNI.Vlr_Unitario_Serv,UNI.Vlr_Total_Serv,UNI.idProducto,UNI.CodProducto,UNI.nomproducto,O.idOrden FROM (
+SELECT upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio,SUM(f.Cantidad) as Cantidad, f.ValTotal as Vlr_Unitario_Serv,
+SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv, p.idProducto,p.CodProducto,p.nomproducto
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
-INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
-INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento 
+INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento
 INNER JOIN  admatencion c on g.iddestino=c.idatencion
 INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
@@ -464,9 +463,11 @@ LEFT JOIN admatencioncontrato h on h.idatencion=g.iddestino and a.idcontrato=h.i
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
 WHERE a.IndTipoFactura='RAC' AND  a.idfactura=@idFactura
-GROUP BY 
-upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )),upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal, 
-p.idProducto,p.CodProducto,p.nomproducto,o.Idorden
+GROUP BY
+upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )),upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal,
+p.idProducto,p.CodProducto,p.nomproducto
+) as UNI
+INNER JOIN facFacturaDetOrden O on O.idFactura=@idFactura AND UNI.idProducto=O.idProducto
 ORDER BY o.Idorden";
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);

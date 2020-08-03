@@ -18,6 +18,7 @@ namespace FElectronicaWS.Servicios
         public string GetData(int nroFactura, int idCliente, string urlPdfFactura, string moneda)
         {
             #region Definicion de Factura
+            logFacturas.Info($"****************************************************** Factura Numero: {nroFactura}    ***********************************");
             logFacturas.Info("Se recibe factura con siguientes datos nroFactura: " + nroFactura + "  IdCliente:" + idCliente + " urlPdf:" + urlPdfFactura);
             try
             {
@@ -42,6 +43,7 @@ namespace FElectronicaWS.Servicios
                 string _RegimenFiscal = string.Empty;
                 Int16 _idNaturaleza = 0;
                 int concepto = 0;
+                string _Pais = string.Empty;
 
                 FormaPago formaPagoTmp = new FormaPago();
 
@@ -123,10 +125,14 @@ WHERE b.numdocrespaldo=@nroFactura"; //**************REvisar los campos que se a
                 using (SqlConnection connx = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     connx.Open();
-                    string qryDatosCliente1 = @"SELECT IdLocalizaTipo,DesLocalizacion,B.nom_dipo,A.IdLugar,RIGHT(B.cod_dipo,5) FROM genTerceroLocaliza A
-LEFT JOIN GEN_DIVI_POLI B ON A.IdLugar=B.IdLugar
-WHERE IdTercero=@idTercero and IdLocalizaTipo IN (2,3)
-ORDER BY IdLocalizaTipo";
+                    string qryDatosCliente1 = @"SELECT IdLocalizaTipo,DesLocalizacion,B.nom_dipo,A.IdLugar,SUBSTRING(B.cod_dipo,5,5) AS 'Ciudad',
+       pd.CodigoAlfa2,pd.NombreComun,c.nom_dipo as Depto, substring(c.cod_dipo, 5, 2) as CodDepto
+FROM genTerceroLocaliza A
+LEFT JOIN GEN_DIVI_POLI B ON A.IdLugar = B.IdLugar
+INNER JOIN GEN_PAISES_DIAN AS pd ON cod_dipo_sahi = substring(cod_dipo, 1, 3)
+inner join GEN_DIVI_POLI as c ON substring(c.cod_dipo,1,6) = substring(b.cod_dipo, 1, 6) AND c.tip_dipo = 'D'
+WHERE IdTercero = @idTercero and IdLocalizaTipo IN(2, 3)
+ORDER BY IdLocalizaTipo ";
                     SqlCommand cmdDatosCliente1 = new SqlCommand(qryDatosCliente1, connx);
                     cmdDatosCliente1.Parameters.Add("@idTercero", SqlDbType.Int).Value = _idTercero;
                     SqlDataReader rdDatosCliente1 = cmdDatosCliente1.ExecuteReader();
@@ -137,8 +143,16 @@ ORDER BY IdLocalizaTipo";
                             if (rdDatosCliente1.GetInt32(0) == 2)
                             {
                                 _direccionCliente = rdDatosCliente1.GetString(1);
-                                _municipioCliente = rdDatosCliente1.GetString(4);
                                 _localizacionCliente = rdDatosCliente1.GetInt32(3);
+                                _Pais = rdDatosCliente1.GetString(5);
+                                if (rdDatosCliente1.GetSqlString(5).Equals("CO"))
+                                {
+                                    _municipioCliente = rdDatosCliente1.GetString(4);
+                                }
+                                else
+                                {
+                                    _municipioCliente = "00000"; //Ajustado Para Facturas Administrativas, Clientes Extranjeros, Facturado eb Pessos 2020-08-03
+                                }
                             }
                             else if (rdDatosCliente1.GetInt32(0) == 3)
                             {
@@ -218,22 +232,6 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                         facturaEnviar.notificaciones = notificaciones;
                     }
 
-                    //                    string qryIvaFact = @"SELECT sum(a.val_cuen) as totalIva
-                    //FROM cxcfacmanualdet a 
-                    //inner join cxccuenta b on a.idcuenta=b.idcuenta and  b.numdocrespaldo=@factura
-                    //WHERE a.cod_cuen in (  select replace (val_camp, ';','') from gen_enti_dato where  nom_camp='CXC_FIVA')";
-                    //                    SqlCommand cmdIvaFact = new SqlCommand(qryIvaFact, connx);
-                    //                    cmdIvaFact.Parameters.Add("@factura", SqlDbType.Int).Value = nroFactura;
-                    //                    SqlDataReader rdIvaFact = cmdIvaFact.ExecuteReader();
-                    //                    if (rdIvaFact.HasRows)
-                    //                    {
-                    //                        rdIvaFact.Read();
-                    //                        if (!rdIvaFact.IsDBNull(0))
-                    //                        {
-                    //                            _valorIva = Math.Round(rdIvaFact.GetDecimal(0), 0);
-                    //                        }
-                    //                    }
-                    //                }
                     Adquiriente adquirienteTmp = new Adquiriente();
                     adquirienteTmp.identificacion = _numDocCliente;
                     adquirienteTmp.tipoIdentificacion = _tipoDocCliente;
@@ -289,7 +287,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
 
                     adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                     Ubicacion ubicacionCliente = new Ubicacion();
-                    ubicacionCliente.pais = "CO";
+                    ubicacionCliente.pais = _Pais;
                     ubicacionCliente.codigoMunicipio = _municipioCliente;
                     ubicacionCliente.direccion = _direccionCliente;
                     adquirienteTmp.ubicacion = ubicacionCliente;
