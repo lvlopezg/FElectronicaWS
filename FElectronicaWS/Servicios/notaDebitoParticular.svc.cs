@@ -63,7 +63,7 @@ namespace FElectronicaWS.Servicios
                 NotaDebitoEnviar.numeroDocumento = nroNotaDebito.ToString();
                 NotaDebitoEnviar.tipoDocumento = 3;
                 NotaDebitoEnviar.subTipoDocumento = "92";
-                NotaDebitoEnviar.tipoOperacion = "05";
+                NotaDebitoEnviar.tipoOperacion = "10";
                 NotaDebitoEnviar.generaRepresentacionGrafica = false;
 
                 ClienteNatural cliente = new ClienteNatural();

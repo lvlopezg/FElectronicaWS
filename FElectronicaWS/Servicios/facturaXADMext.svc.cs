@@ -22,18 +22,10 @@ namespace FElectronicaWS.Servicios
         private static Logger logFacturas = LogManager.GetCurrentClassLogger();
         public string GetData(int nroFactura, int idCliente, string urlPdfFactura, string moneda)
         {
+            logFacturas.Info("***************************************************************************************************************************");
             logFacturas.Info("Se recibe factura con siguientes datos nroFactura: " + nroFactura + "  IdCliente:" + idCliente + " urlPdf:" + urlPdfFactura);
             try
             {
-                ////Int32 _idContrato = 0;
-                //decimal _Valtotal = 0;
-                ////Decimal _ValDescuento = 0;
-                ////Decimal _ValDescuentoT = 0;
-                //Decimal _ValPagos = 0;
-                //Decimal _ValImpuesto = 0;
-                //decimal _ValCobrar = 0;
-                //double ValBrutoProd = 0;
-                //double _totalIvaProd = 0;
                 decimal _Valtotal = 0;
                 double TotalGravadoIva = 0;
                 double TotalExcentoIva = 0;
@@ -46,8 +38,8 @@ namespace FElectronicaWS.Servicios
                 //Decimal _valPos = 0;
                 //Decimal _valNoPos = 0;
                 Decimal _valorIvaPesos = 0;
-                double tasaIva = 0;
-                Int32 _IdUsuarioR = 0;
+                //double tasaIva = 0;
+                //Int32 _IdUsuarioR = 0;
                 Int32 _idTercero = 0;
                 string _usrNombre = string.Empty;
                 string _usrNumDocumento = string.Empty;
@@ -58,7 +50,7 @@ namespace FElectronicaWS.Servicios
                 string _razonSocial = string.Empty;
                 string _repLegal = string.Empty;
                 string _RegimenFiscal = string.Empty;
-                Int16 _idNaturaleza = 0;
+                //Int16 _idNaturaleza = 0;
                 int concepto = 0;
 
                 FormaPago formaPagoTmp = new FormaPago();
@@ -71,7 +63,7 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.numeroDocumento = nroFactura.ToString();
                 facturaEnviar.tipoDocumento = 1;
                 facturaEnviar.subTipoDocumento = "01";
-                facturaEnviar.tipoOperacion = "05";
+                facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.moneda = moneda;
                 facturaEnviar.generaRepresentacionGrafica = false;
                 //ClienteInternacional cliente = new ClienteInternacional();
@@ -133,7 +125,7 @@ WHERE b.numdocrespaldo=@nroFactura";
                 string _telefonoCliente = string.Empty;
                 string _municipioCliente = string.Empty;
                 string _departamento = string.Empty;
-                int _localizacionCliente = 0;
+                //int _localizacionCliente = 0;
                 string _correoCliente = string.Empty;
                 string codigoPais = string.Empty;
 
@@ -182,7 +174,7 @@ WHERE a.IdLugar = @idLugar";
                     }
                     else
                     {
-                        codigoPais = rdCodigoPais.GetString(0);
+                        codigoPais = "CO";
                     }
                 }
                 Adquiriente adquirienteTmp = new Adquiriente();
@@ -236,7 +228,8 @@ WHERE a.IdLugar = @idLugar";
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = codigoPais;
-                if (cliente.codigoPais.Equals("CO"))
+
+                if (cliente.codigoPais=="CO")
                 {
                     ubicacionCliente.codigoMunicipio = cliente.codMunicipio;// "00000"; // se ajusta para factura 6180330 Cliente Internacional
                 }

@@ -59,7 +59,7 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.numeroDocumento = nroFactura.ToString();
                 facturaEnviar.tipoDocumento = 1;
                 facturaEnviar.subTipoDocumento = "01";
-                facturaEnviar.tipoOperacion = "05";
+                facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.generaRepresentacionGrafica = false;
 
                 using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
@@ -329,7 +329,7 @@ INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=@idFactura  ORDER BY A.IdFactura,o.Idorden
+WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=@idFactura 
 UNION ALL
 SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
@@ -348,7 +348,7 @@ INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=@idFactura ORDER BY A.IdFactura,o.Idorden
+WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=@idFactura 
 UNION ALL
 SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
@@ -368,7 +368,7 @@ LEFT JOIN vwFacProcPrincAsocPaq PQ on PQ.idfactura = a.idfactura and g.IdProcPri
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura ORDER BY A.IdFactura,o.Idorden
+WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND a.idfactura=@idFactura 
 UNION ALL
 SELECT  isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
 upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
@@ -390,7 +390,7 @@ LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.i
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
 WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND a.idfactura=@idFactura
- ORDER BY A.IdFactura,o.Idorden";
+ ORDER BY o.Idorden";
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);
                         SqlDataReader rdDetalleFac = cmdDetalleFac.ExecuteReader();

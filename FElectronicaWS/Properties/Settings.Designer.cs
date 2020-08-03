@@ -12,7 +12,7 @@ namespace FElectronicaWS.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.5.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.6.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -135,21 +135,21 @@ namespace FElectronicaWS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://localhost:10105/")]
-        public string urlServicioClientes {
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=WINTVTIBD01\\HSI_TST;Initial Catalog=HSI_TST;User ID=husi_usr;Password" +
+            "=pwdHUSI;MultipleActiveResultSets=True")]
+        public string DBConexion {
             get {
-                return ((string)(this["urlServicioClientes"]));
+                return ((string)(this["DBConexion"]));
             }
         }
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=TYCHO;Initial Catalog=HSI_PRI;User ID=interface;Password=interface;Mu" +
-            "ltipleActiveResultSets=True")]
-        public string DBConexion {
+        [global::System.Configuration.DefaultSettingValueAttribute("http://wintvtiws01:10110/")]
+        public string urlServicioClientes {
             get {
-                return ((string)(this["DBConexion"]));
+                return ((string)(this["urlServicioClientes"]));
             }
         }
     }

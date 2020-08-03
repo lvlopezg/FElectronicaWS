@@ -67,7 +67,7 @@ namespace FElectronicaWS.Servicios
                 NotaCreditoEnviar.numeroDocumento = nroNotaCredito.ToString();
                 NotaCreditoEnviar.tipoDocumento = 2;
                 NotaCreditoEnviar.subTipoDocumento = "91";
-                NotaCreditoEnviar.tipoOperacion = "05"; //Standar
+                NotaCreditoEnviar.tipoOperacion = "10"; //Standar
                 NotaCreditoEnviar.generaRepresentacionGrafica = false;
 
                 bool facXRel = false;
@@ -524,13 +524,14 @@ WHERE IdMovimiento = @idMovimiento";
                                                     logFacturas.Info("Descarga Existosa de Archivos de la Nota Credito con Identificadotr:" + respuesta.resultado.UUID + " Destino:" + carpetaDescarga);
                                                     if (!(respuesta.advertencias is null))
                                                     {
-                                                        string qryAdvertencia = @"INSERT INTO dbo.facNotaTempWSAdvertencias(IdNota,CodAdvertencia,FecRegistro,DescripcionAdv) 
-VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
+                                                        string qryAdvertencia = @"INSERT INTO dbo.facNotaTempWSAdvertencias(IdNota,CodAdvertencia,FecRegistro,DescripcionAdv,idTipoNota) 
+VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv,@idTipoNota)";
                                                         SqlCommand cmdInsertarAdvertencia = new SqlCommand(qryAdvertencia, conn3);
                                                         cmdInsertarAdvertencia.Parameters.Add("@IdNota", SqlDbType.Int);
                                                         cmdInsertarAdvertencia.Parameters.Add("@CodAdvertencia", SqlDbType.VarChar);
                                                         cmdInsertarAdvertencia.Parameters.Add("@DescripcionAdv", SqlDbType.NVarChar);
                                                         cmdInsertarAdvertencia.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
+                                                        cmdInsertarAdvertencia.Parameters.Add("@idTipoNota", SqlDbType.VarChar);
                                                         foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                         {
                                                             cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaCredito;
@@ -538,6 +539,7 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                             //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                             cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
                                                             cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
+                                                            cmdInsertarAdvertencia.Parameters["@idTipoNota"].Value = "NCE";
                                                             if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                             {
                                                                 logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");
@@ -570,7 +572,7 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                         }
                                         catch (WebException webEx1)
                                         {
-                                            logFacturas.Info("Se ha presentado una Falla durante la descarga de los objetos de la factura:" + webEx1.Message + "     " + webEx1.InnerException.Message);
+                                            logFacturas.Info($"Se ha presentado una Falla durante la descarga de los objetos de la factura: {webEx1.Message} InnerException: {webEx1.InnerException.Message}");
                                             logFacturas.Warn($"Pila de Mensajes:::::{webEx1.StackTrace}");
                                             valorRpta = "93";
                                         }

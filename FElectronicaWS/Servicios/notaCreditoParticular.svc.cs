@@ -64,7 +64,7 @@ namespace FElectronicaWS.Servicios
                 NotaCreditoEnviar.numeroDocumento = nroNotaCredito.ToString();
                 NotaCreditoEnviar.tipoDocumento = 2;
                 NotaCreditoEnviar.subTipoDocumento = "91";
-                NotaCreditoEnviar.tipoOperacion = "05"; //Standar
+                NotaCreditoEnviar.tipoOperacion = "10"; //Standar
                 NotaCreditoEnviar.generaRepresentacionGrafica = false;
 
                 ClienteNatural cliente = new ClienteNatural();
