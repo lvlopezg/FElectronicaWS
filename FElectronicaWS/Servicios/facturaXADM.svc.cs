@@ -41,6 +41,7 @@ namespace FElectronicaWS.Servicios
                 string _razonSocial = string.Empty;
                 string _repLegal = string.Empty;
                 string _RegimenFiscal = string.Empty;
+
                 Int16 _idNaturaleza = 0;
                 int concepto = 0;
                 string _Pais = string.Empty;
@@ -145,6 +146,7 @@ ORDER BY IdLocalizaTipo ";
                                 _direccionCliente = rdDatosCliente1.GetString(1);
                                 _localizacionCliente = rdDatosCliente1.GetInt32(3);
                                 _Pais = rdDatosCliente1.GetString(5);
+                                _departamento=rdDatosCliente1.GetString(7);
                                 if (rdDatosCliente1.GetSqlString(5).Equals("CO"))
                                 {
                                     _municipioCliente = rdDatosCliente1.GetString(4);
@@ -179,7 +181,7 @@ ORDER BY IdLocalizaTipo ";
                     SqlCommand cmdDatosCliente2 = new SqlCommand(qryDatosCliente2, connx);
                     cmdDatosCliente2.Parameters.Add("@idLugar", SqlDbType.Int).Value = _localizacionCliente;
                     SqlDataReader rdDatosCliente2 = cmdDatosCliente2.ExecuteReader();
-                    if (rdDatosCliente2.HasRows)
+                    if (rdDatosCliente2.HasRows && _Pais.Equals("CO"))
                     {
                         rdDatosCliente2.Read();
                         _departamento = rdDatosCliente2.GetString(2);
@@ -291,7 +293,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     ubicacionCliente.codigoMunicipio = _municipioCliente;
                     ubicacionCliente.direccion = _direccionCliente;
                     adquirienteTmp.ubicacion = ubicacionCliente;
-
+                    ubicacionCliente.departamento = _departamento;
                     documentoF2.adquiriente = adquirienteTmp;
                     documentoF2.documento = facturaEnviar;
 
@@ -361,14 +363,8 @@ WHERE c.val_unit_inte is null and NumDocRespaldo = @idFactura ORDER BY c.num_reg
                                     {
                                         TotalExcentoIva += double.Parse(rdDetalleFac.GetSqlMoney(5).ToString());
                                     }
-
-
                                     detalleProductos.Add(lineaProducto);
                                     nroLinea++;
-
-
-
-
                                     // Para moneda extranjera:vr_Total_Inte-vr_IVA_Inte de la tabla
                                 }
                                 catch (Exception sqlExp)
