@@ -300,6 +300,26 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                     {
                         responsanbilidadesR.Add("R-99-PN");
                     }
+                    SqlCommand sqlValidaFactura = new SqlCommand("spFACEIdentificadorTipoOperaNota", conexion01);
+                    sqlValidaFactura.CommandType = CommandType.StoredProcedure;
+                    sqlValidaFactura.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+                    SqlDataReader rdValidaFactura = sqlValidaFactura.ExecuteReader();
+                    if (rdValidaFactura.HasRows)
+                    {
+                        rdValidaFactura.Read();
+                        if (rdValidaFactura.GetInt32(0) == 0)
+                        {
+                            NotaDebitoEnviar.tipoOperacion = "10"; //Standar
+                        }
+                        else
+                        {
+                            NotaDebitoEnviar.tipoOperacion = "22"; //Standar
+                        }
+                    }
+                    else
+                    {
+                        logFacturas.Error($"No hay Datos de Factura, para la Factura:{nroFactura}");
+                    }
                 }
 
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
