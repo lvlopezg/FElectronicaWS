@@ -37,7 +37,7 @@ namespace FElectronicaWS.Servicios
                 //Decimal _valPos = 0;
                 //Decimal _valNoPos = 0;
                 //Int32 _IdUsuarioR = 0;
-                //Int32 _idTercero = 0;
+                Int32 _idTercero = 0;
                 //string _usrNombre = string.Empty;
                 //string _usrNumDocumento = string.Empty;
                 //Byte _usrIdTipoDoc = 0;
@@ -62,7 +62,7 @@ namespace FElectronicaWS.Servicios
                 NotaDebitoEnviar.numeroDocumento = nroNotaDebito.ToString();
                 NotaDebitoEnviar.tipoDocumento = 3;
                 NotaDebitoEnviar.subTipoDocumento = "92";
-                NotaDebitoEnviar.tipoOperacion = "05";
+                NotaDebitoEnviar.tipoOperacion = "10";
                 NotaDebitoEnviar.generaRepresentacionGrafica = false;
 
                 //ClienteJuridico cliente = new ClienteJuridico();
@@ -182,6 +182,7 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                     if (rdNotaDebito.HasRows)
                     {
                         rdNotaDebito.Read();
+                        _idTercero = rdNotaDebito.GetInt32(7);
                         _idMovimiento = rdNotaDebito.GetInt32(14);
                         var valorTNota = rdNotaDebito["ValMonto"];
                         _Valtotal = Decimal.Parse(valorTNota.ToString());
@@ -334,7 +335,23 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = "CO";
@@ -393,7 +410,6 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
 
                                 detalleProductos.Add(lineaProducto);
                             }
-
                         }
                         else
                         {
@@ -407,26 +423,20 @@ WHERE a.IdMovimiento=@idMovimiento";
                             {
                                 rdDetalleFac.Read();
                                 DescNota = rdDetalleFac.GetString(2);
-
                                 DetallesItem lineaProducto = new DetallesItem();
                                 lineaProducto.tipoDetalle = 1; // Linea Normal
                                 string codigoProducto = "ND1";
                                 lineaProducto.valorCodigoInterno = codigoProducto;
-
                                 lineaProducto.codigoEstandar = "999";
                                 lineaProducto.valorCodigoEstandar = codigoProducto;
                                 lineaProducto.descripcion = DescNota;
-
                                 lineaProducto.unidades = 1;// double.Parse(rdValidaDet.GetInt32(2).ToString());
                                 lineaProducto.unidadMedida = "94";// rdDetalleFac.GetString(19);
                                 lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
                                 lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
                                 lineaProducto.valorBrutoMoneda = "COP";
-
                                 detalleProductos.Add(lineaProducto);
-
                             }
-
                         }
                         #region MyRegion_01
                         //                        string qryTipoNota = @"SELECT IdMovimiento,NumDocumento,DesMovimiento,b.IdTipoHomologoDian from cxccarteramovi a
@@ -849,13 +859,15 @@ WHERE IdMovimiento = @idMovimiento";
                                                 logFacturas.Info("Descarga Existosa de Archivos de la Nota Debito con Identificadotr:" + respuesta.resultado.UUID + " Destino:" + carpetaDescarga);
                                                 if (!(respuesta.advertencias is null))
                                                 {
-                                                    string qryAdvertencia = @"INSERT INTO dbo.facNotaTempWSAdvertencias(IdNota,CodAdvertencia,FecRegistro,DescripcionAdv) 
-VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
+                                                    string qryAdvertencia = @"INSERT INTO dbo.facNotaTempWSAdvertencias(IdNota,CodAdvertencia,FecRegistro,DescripcionAdv,idTipoNota) 
+VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv,@idTipoNota)";
                                                     SqlCommand cmdInsertarAdvertencia = new SqlCommand(qryAdvertencia, conn3);
                                                     cmdInsertarAdvertencia.Parameters.Add("@IdNota", SqlDbType.Int);
                                                     cmdInsertarAdvertencia.Parameters.Add("@CodAdvertencia", SqlDbType.VarChar);
                                                     cmdInsertarAdvertencia.Parameters.Add("@DescripcionAdv", SqlDbType.NVarChar);
                                                     cmdInsertarAdvertencia.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
+                                                    cmdInsertarAdvertencia.Parameters.Add("@idTipoNota", SqlDbType.VarChar);
+
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
                                                         cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaDebito;
@@ -863,6 +875,7 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                         //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
                                                         cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@idTipoNota"].Value = "ND";
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

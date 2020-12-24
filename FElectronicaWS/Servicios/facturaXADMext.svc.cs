@@ -22,18 +22,10 @@ namespace FElectronicaWS.Servicios
         private static Logger logFacturas = LogManager.GetCurrentClassLogger();
         public string GetData(int nroFactura, int idCliente, string urlPdfFactura, string moneda)
         {
+            logFacturas.Info("***************************************************************************************************************************");
             logFacturas.Info("Se recibe factura con siguientes datos nroFactura: " + nroFactura + "  IdCliente:" + idCliente + " urlPdf:" + urlPdfFactura);
             try
             {
-                ////Int32 _idContrato = 0;
-                //decimal _Valtotal = 0;
-                ////Decimal _ValDescuento = 0;
-                ////Decimal _ValDescuentoT = 0;
-                //Decimal _ValPagos = 0;
-                //Decimal _ValImpuesto = 0;
-                //decimal _ValCobrar = 0;
-                //double ValBrutoProd = 0;
-                //double _totalIvaProd = 0;
                 decimal _Valtotal = 0;
                 double TotalGravadoIva = 0;
                 double TotalExcentoIva = 0;
@@ -46,8 +38,8 @@ namespace FElectronicaWS.Servicios
                 //Decimal _valPos = 0;
                 //Decimal _valNoPos = 0;
                 Decimal _valorIvaPesos = 0;
-                double tasaIva = 0;
-                Int32 _IdUsuarioR = 0;
+                //double tasaIva = 0;
+                //Int32 _IdUsuarioR = 0;
                 Int32 _idTercero = 0;
                 string _usrNombre = string.Empty;
                 string _usrNumDocumento = string.Empty;
@@ -58,20 +50,20 @@ namespace FElectronicaWS.Servicios
                 string _razonSocial = string.Empty;
                 string _repLegal = string.Empty;
                 string _RegimenFiscal = string.Empty;
-                Int16 _idNaturaleza = 0;
+                //Int16 _idNaturaleza = 0;
                 int concepto = 0;
 
                 FormaPago formaPagoTmp = new FormaPago();
                 documentoRoot documentoF2 = new documentoRoot();
                 Documento facturaEnviar = new Documento();
-                facturaEnviar.identificadorTransaccion = "3464d2c5-c24b-464e-ad46-da9c6cd94de3";
+                facturaEnviar.identificadorTransaccion = "3462c5-c24b-464e-ad46-da9c6cd94de3";
                 facturaEnviar.URLPDF = urlPdfFactura;
                 facturaEnviar.NITFacturador = Properties.Settings.Default.NitHusi;
                 facturaEnviar.prefijo = Properties.Settings.Default.Prefijo;
                 facturaEnviar.numeroDocumento = nroFactura.ToString();
                 facturaEnviar.tipoDocumento = 1;
                 facturaEnviar.subTipoDocumento = "01";
-                facturaEnviar.tipoOperacion = "05";
+                facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.moneda = moneda;
                 facturaEnviar.generaRepresentacionGrafica = false;
                 //ClienteInternacional cliente = new ClienteInternacional();
@@ -133,7 +125,7 @@ WHERE b.numdocrespaldo=@nroFactura";
                 string _telefonoCliente = string.Empty;
                 string _municipioCliente = string.Empty;
                 string _departamento = string.Empty;
-                int _localizacionCliente = 0;
+                //int _localizacionCliente = 0;
                 string _correoCliente = string.Empty;
                 string codigoPais = string.Empty;
 
@@ -182,7 +174,7 @@ WHERE a.IdLugar = @idLugar";
                     }
                     else
                     {
-                        codigoPais = rdCodigoPais.GetString(0);
+                        codigoPais = "CO";
                     }
                 }
                 Adquiriente adquirienteTmp = new Adquiriente();
@@ -215,11 +207,36 @@ WHERE a.IdLugar = @idLugar";
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
+
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = codigoPais;
-                ubicacionCliente.codigoMunicipio = "00000";
+
+                if (cliente.codigoPais=="CO")
+                {
+                    ubicacionCliente.codigoMunicipio = cliente.codMunicipio;// "00000"; // se ajusta para factura 6180330 Cliente Internacional
+                }
+                else
+                {
+                    ubicacionCliente.codigoMunicipio = "00000";
+                }
                 ubicacionCliente.departamento = cliente.Nombre_Depto;
                 ubicacionCliente.ciudad = cliente.Nom_Municipio;
                 ubicacionCliente.direccion = cliente.direccion;

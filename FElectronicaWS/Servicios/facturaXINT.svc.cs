@@ -65,7 +65,7 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.numeroDocumento = nroFactura.ToString();
                 facturaEnviar.tipoDocumento = 1;
                 facturaEnviar.subTipoDocumento = "01";
-                facturaEnviar.tipoOperacion = "05";
+                facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.generaRepresentacionGrafica = false;
 
                 //ClienteInternacional cliente;
@@ -277,7 +277,23 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = cliente.codigoPais;// "AW";
@@ -403,8 +419,10 @@ where a.indhabilitado = 1 and a.idfactura =@idFactura";
 FROM facfacturapacint a
 INNER JOIN facfactura b on a.idfactura=b.idfactura
 INNER JOIN facfacturapacintdet d on a.idfacturapacint=d.idfacturapacint
+INNER JOIN facfacturapacintdetorden e on d.IdFacturaPacInt=e.IdFacturaPacInt AND  d.IdCategoria=e.IdCategoria AND d.IdProducto=e.IdProducto AND d.IdMovimiento=e.IdMovimiento
 INNER JOIN concontrato c on b.idcontrato=c.idcontrato
-WHERE a.indhabilitado=1 and a.idfactura=@idFactura";
+WHERE a.indhabilitado=1 and a.idfactura=@idFactura
+ORDER BY e.Idorden";
 
 						SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
 						cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;

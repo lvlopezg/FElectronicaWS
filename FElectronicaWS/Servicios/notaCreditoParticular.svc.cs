@@ -64,7 +64,7 @@ namespace FElectronicaWS.Servicios
                 NotaCreditoEnviar.numeroDocumento = nroNotaCredito.ToString();
                 NotaCreditoEnviar.tipoDocumento = 2;
                 NotaCreditoEnviar.subTipoDocumento = "91";
-                NotaCreditoEnviar.tipoOperacion = "05"; //Standar
+                NotaCreditoEnviar.tipoOperacion = "10"; //Standar
                 NotaCreditoEnviar.generaRepresentacionGrafica = false;
 
                 ClienteNatural cliente = new ClienteNatural();
@@ -323,7 +323,24 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                         adquirienteTmp.tipoPersona = "0";
                     }
                     List<string> responsanbilidadesR = new List<string>();
-                    responsanbilidadesR.Add("R-12-PJ");
+                    using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                    {
+                        conexion01.Open();
+                        SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                        sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                        sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                        SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                        if (rdValidaDet.HasRows)
+                        {
+                            rdValidaDet.Read();
+                            responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                        }
+                        else
+                        {
+                            responsanbilidadesR.Add("R-99-PN");
+                        }
+                    }
+
                     adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                     Ubicacion ubicacionCliente = new Ubicacion();
                     ubicacionCliente.pais = "CO";

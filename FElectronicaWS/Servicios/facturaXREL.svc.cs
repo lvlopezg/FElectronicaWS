@@ -57,7 +57,7 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.numeroDocumento = nroFactura.ToString();
                 facturaEnviar.tipoDocumento = 1;
                 facturaEnviar.subTipoDocumento = "01";
-                facturaEnviar.tipoOperacion = "05";
+                facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.generaRepresentacionGrafica = false;
                 using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
@@ -360,7 +360,24 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     adquirienteTmp.tipoPersona = "0";
                 }
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
+
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = "CO";
@@ -429,18 +446,16 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     if (rdFactura.HasRows)
                     {
                         rdFactura.Read();
-                        string strDetalleFac = @"SELECT /*isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,*/
-upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio,SUM(f.Cantidad) as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv,
-/*g.iddestino,d.idcliente,d.NumDocumento,d.nomCliente,d.Apecliente,*/
-p.idProducto,p.CodProducto,p.nomproducto/*g.idMovimiento,f.ValDescuento  */
+                        string strDetalleFac = @"SELECT UNI.Cod_Servicio,UNI.Des_Servicio,UNI.Cantidad,UNI.Vlr_Unitario_Serv,UNI.Vlr_Total_Serv,UNI.idProducto,UNI.CodProducto,UNI.nomproducto,O.idOrden FROM (
+SELECT upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
+upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio,SUM(f.Cantidad) as Cantidad, f.ValTotal as Vlr_Unitario_Serv,
+SUM(isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0))) as Vlr_Total_Serv, p.idProducto,p.CodProducto,p.nomproducto
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
-INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento 
+INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento
 INNER JOIN  admatencion c on g.iddestino=c.idatencion
 INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
@@ -448,11 +463,12 @@ LEFT JOIN admatencioncontrato h on h.idatencion=g.iddestino and a.idcontrato=h.i
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
 WHERE a.IndTipoFactura='RAC' AND  a.idfactura=@idFactura
-GROUP BY 
-/*isnull(h.NumAutorizacionInicial,'0'),*/
-upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )),
-upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal, 
-/*g.iddestino,d.idcliente,d.NumDocumento,d.nomCliente,d.Apecliente,*/p.idProducto,p.CodProducto,p.nomproducto/*,g.idMovimiento,f.ValDescuento*/";
+GROUP BY
+upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )),upper(( isnull(J.NomPRoman,P.NomProducto))),f.ValTotal,
+p.idProducto,p.CodProducto,p.nomproducto
+) as UNI
+INNER JOIN facFacturaDetOrden O on O.idFactura=@idFactura AND UNI.idProducto=O.idProducto
+ORDER BY o.Idorden";
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         cmdDetalleFac.Parameters.Add("@idFactura", SqlDbType.Int).Value = rdFactura.GetInt32(0);
                         SqlDataReader rdDetalleFac = cmdDetalleFac.ExecuteReader();

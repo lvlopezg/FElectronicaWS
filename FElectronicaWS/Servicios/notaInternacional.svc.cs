@@ -66,7 +66,7 @@ namespace FElectronicaWS.Servicios
                 NotaCreditoEnviar.numeroDocumento = nroNotaCredito.ToString();
                 NotaCreditoEnviar.tipoDocumento = 2;
                 NotaCreditoEnviar.subTipoDocumento = "91";
-                NotaCreditoEnviar.tipoOperacion = "05"; //Standar
+                NotaCreditoEnviar.tipoOperacion = "10"; //Standar
                 NotaCreditoEnviar.generaRepresentacionGrafica = false;
 
                 string urlClientes = string.Empty;
@@ -197,7 +197,24 @@ WHERE idFactura = @idFactura";
                         adquirienteTmp.tipoPersona = "0";
                     }
                     List<string> responsanbilidadesR = new List<string>();
-                    responsanbilidadesR.Add("R-12-PJ");
+                    using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                    {
+                        conexion01.Open();
+                        SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                        sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                        sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                        SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                        if (rdValidaDet.HasRows)
+                        {
+                            rdValidaDet.Read();
+                            responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                        }
+                        else
+                        {
+                            responsanbilidadesR.Add("R-99-PN");
+                        }
+                    }
+
                     adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                     Ubicacion ubicacionCliente = new Ubicacion();
                     ubicacionCliente.pais = cliente.codigoPais;
@@ -226,8 +243,11 @@ WHERE idFactura = @idFactura";
                         conexion01.Open();
                         try
                         {
-                            string qryNotaIntDetalle = @"SELECT IdProducto,codProducto,NomProducto,IdMovimiento,ValUnitUSD,Cantidad,ValTotalUSD
-                                FROM facFacturaPacIntNotaDet WHERE IdFacturaPacInt =@idInternacional and idNota=@idNota";
+                            string qryNotaIntDetalle = @"SELECT A.IdProducto,A.codProducto,A.NomProducto,A.IdMovimiento,A.ValUnitUSD,A.Cantidad,A.ValTotalUSD
+ FROM facFacturaPacIntNotaDet A
+ INNER JOIN facFacturaPacIntNotaDetOrden O ON A.IdNota=O.idNota AND A.IdFacturaPacInt=O.IdFacturaPacInt AND A.IdCategoria=O.IdCategoria AND A.IdProducto=O.IdProducto AND A.IdMovimiento=O.IdMovimiento
+ WHERE A.IdFacturaPacInt=@idInternacional and A.idNota=@idNota
+ ORDER BY O.Idorden";
                              SqlCommand sqlValidaDet = new SqlCommand(qryNotaIntDetalle, conexion01);
                             sqlValidaDet.Parameters.Add("@idInternacional", SqlDbType.Int).Value = idInternacional;
                             sqlValidaDet.Parameters.Add("@idNota", SqlDbType.Int).Value = nroNotaCredito;
@@ -511,7 +531,7 @@ WHERE IdMovimiento = @idMovimiento";
                                 SqlCommand cmdActualiza = new SqlCommand(strActualiza, connUpdate);
                                 cmdActualiza.Parameters.Add("@identificador", SqlDbType.VarChar).Value = respuesta.resultado.UUID;
                                 cmdActualiza.Parameters.Add("@nroNota", SqlDbType.Int).Value = nroNotaCredito;
-                                cmdActualiza.Parameters.Add("@idTipoNota", SqlDbType.VarChar).Value = "NC";
+                                cmdActualiza.Parameters.Add("@idTipoNota", SqlDbType.VarChar).Value = "IN"; //todo:Valida Tipo Notas.
 
                                 if (cmdActualiza.ExecuteNonQuery() > 0)
                                 {
@@ -540,19 +560,21 @@ WHERE IdMovimiento = @idMovimiento";
                                                     logFacturas.Info("Descarga Existosa de Archivos de la Nota Credito con Identificadotr:" + respuesta.resultado.UUID + " Destino:" + carpetaDescarga);
                                                     if (!(respuesta.advertencias is null))
                                                     {
-                                                        string qryAdvertencia = @"INSERT INTO dbo.facNotaTempWSAdvertencias(IdNota,CodAdvertencia,FecRegistro,DescripcionAdv) 
-VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
+                                                        string qryAdvertencia = @"INSERT INTO dbo.facNotaTempWSAdvertencias(IdNota,CodAdvertencia,FecRegistro,DescripcionAdv,idTipoNota) 
+VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv,@idTipoNota)";
                                                         SqlCommand cmdInsertarAdvertencia = new SqlCommand(qryAdvertencia, conn3);
                                                         cmdInsertarAdvertencia.Parameters.Add("@IdNota", SqlDbType.Int);
                                                         cmdInsertarAdvertencia.Parameters.Add("@CodAdvertencia", SqlDbType.VarChar);
                                                         cmdInsertarAdvertencia.Parameters.Add("@DescripcionAdv", SqlDbType.NVarChar);
                                                         cmdInsertarAdvertencia.Parameters.Add("@FecRegistro", SqlDbType.DateTime);
+                                                        cmdInsertarAdvertencia.Parameters.Add("@idTipoNota", SqlDbType.VarChar);
                                                         foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                         {
                                                             cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaCredito;
                                                             cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                             cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
                                                             cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
+                                                            cmdInsertarAdvertencia.Parameters["@idTipoNota"].Value = "IN";
                                                             if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                             {
                                                                 logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");
@@ -598,7 +620,7 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                 }
                                 else
                                 {
-                                    logFacturas.Info("!!!   No fue posible Actualizar la Factura en la Tabla: facFacturaTempWEBService   !!!");
+                                    logFacturas.Info("!!!   No fue posible Actualizar la Factura en la Tabla: facNotaTempWEBService   !!!");
                                 }
                             }
                         }

@@ -14,7 +14,6 @@ using System.Text;
 
 namespace FElectronicaWS.Servicios
 {
-
     public class facturaXACT : IfacturaXACT
     {
 
@@ -61,7 +60,7 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.numeroDocumento = nroFactura.ToString();
                 facturaEnviar.tipoDocumento = 1;
                 facturaEnviar.subTipoDocumento = "01";
-                facturaEnviar.tipoOperacion = "05";
+                facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.generaRepresentacionGrafica = false;
 
                // ClienteJuridico cliente = new ClienteJuridico();
@@ -208,9 +207,28 @@ WHERE IdFactura =  @nroFactura";
                 {
                     adquirienteTmp.tipoPersona = "0";
                 }
+                
                 List<string> responsanbilidadesR = new List<string>();
-                responsanbilidadesR.Add("R-12-PJ");
+                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+                {
+                    conexion01.Open();
+                    SqlCommand sqlValidaDet = new SqlCommand("spTerceroResponsabilidadRut", conexion01);
+                    sqlValidaDet.CommandType = CommandType.StoredProcedure;
+                    sqlValidaDet.Parameters.Add("@idtercero", SqlDbType.Int).Value = _idTercero;
+                    SqlDataReader rdValidaDet = sqlValidaDet.ExecuteReader();
+                    if (rdValidaDet.HasRows)
+                    {
+                        rdValidaDet.Read();
+                        responsanbilidadesR.Add(rdValidaDet.GetString(0));
+                    }
+                    else
+                    {
+                        responsanbilidadesR.Add("R-99-PN");
+                    }
+                }
+
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
+                
                 Ubicacion ubicacionCliente = new Ubicacion();
                 ubicacionCliente.pais = cliente.codigoPais;
                 ubicacionCliente.departamento = cliente.Nombre_Depto;
@@ -282,20 +300,21 @@ upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cant
 isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv,
 a.IdFactura,F.IdProducto,p.codproducto,p.NomProducto,F.IdMovimiento,F.ValDescuento,F.CantidadFNC,F.IdTasaVenta,F.ValTasa,F.ValCuotaMod,F.indPos,F.Regcum, p.IdProductoTipo,
 --dbo.unidadProducto (p.IdProducto,p.IdProductoTipo) as 'Unidad'
-'Unidad' as 'Unidad'
+'Unidad' as 'Unidad',O.idOrden
 FROM facfactura a
 INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
 INNER JOIN  admatencion c on a.iddestino=c.idatencion
 INNER JOIN  admcliente d on d.idcliente=c.idcliente
 INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
 INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
+INNER JOIN facFacturaDetOrden O on f.idFactura=O.idFactura AND f.idProducto=O.idProducto AND f.idMovimiento=O.idMovimiento
 LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
 INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
 INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino 
 LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
 LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura";
+WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o.Idorden";
                         //logFacturas.Info("consulta de Productos:" + strDetalleFac);
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
                         logFacturas.Info("Nro Factura:" + rdFactura.GetInt32(0));
@@ -312,6 +331,7 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura";
                                 {
                                     List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
                                     DetallesItem lineaProducto = new DetallesItem();
+                                    // lineaProducto.Item=XXXXXXX CAmpo de consecutivo.
                                     lineaProducto.tipoDetalle = 1; // Linea Normal
                                     string codigoProducto = rdDetalleFac.GetString(1);
                                     lineaProducto.valorCodigoInterno = codigoProducto;
@@ -452,6 +472,7 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura";
                     }
                     
                     HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+
                     logFacturas.Info("Codigo Status:" + response.StatusCode);
                     logFacturas.Info("Descripcion Status:" + response.StatusDescription);
                     StreamReader lectura = new StreamReader(response.GetResponseStream());
