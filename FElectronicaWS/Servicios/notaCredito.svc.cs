@@ -45,7 +45,7 @@ namespace FElectronicaWS.Servicios
                 NotaCreditoEnviar.numeroDocumento = nroNotaCredito.ToString();
                 NotaCreditoEnviar.tipoDocumento = 2;
                 NotaCreditoEnviar.subTipoDocumento = "91";
-                NotaCreditoEnviar.tipoOperacion = "10"; //Standar
+
                 NotaCreditoEnviar.generaRepresentacionGrafica = false;
 
                 bool facXRel = false;
@@ -256,8 +256,28 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                         {
                             responsanbilidadesR.Add("R-99-PN");
                         }
-                    }
 
+                        SqlCommand sqlValidaFactura = new SqlCommand("spFACEIdentificadorTipoOperaNota", conexion01);
+                        sqlValidaFactura.CommandType = CommandType.StoredProcedure;
+                        sqlValidaFactura.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+                        SqlDataReader rdValidaFactura = sqlValidaFactura.ExecuteReader();
+                        if (rdValidaFactura.HasRows)
+                        {
+                            rdValidaFactura.Read();
+                            if (rdValidaFactura.GetInt32(0) == 0)
+                            {
+                                NotaCreditoEnviar.tipoOperacion = "10"; //Standar
+                            }
+                            else
+                            {
+                                NotaCreditoEnviar.tipoOperacion = "22"; //Standar
+                            }
+                        }
+                        else
+                        {
+                            logFacturas.Error($"No hay Datos de Factura, para la Factura:{nroFactura}");
+                        }
+                    }
                     adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                     Ubicacion ubicacionCliente = new Ubicacion();
                     ubicacionCliente.pais = cliente.codigoPais;

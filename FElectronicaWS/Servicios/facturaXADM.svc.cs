@@ -41,6 +41,7 @@ namespace FElectronicaWS.Servicios
                 string _razonSocial = string.Empty;
                 string _repLegal = string.Empty;
                 string _RegimenFiscal = string.Empty;
+                string _Ciudad = string.Empty;
 
                 Int16 _idNaturaleza = 0;
                 int concepto = 0;
@@ -60,11 +61,10 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.subTipoDocumento = "01";
                 facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.generaRepresentacionGrafica = false;
-
                 using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     conn.Open();
-                    //                    string qryFacturaEnc = @"SELECT  b.numdocrespaldo,IdTipoDocRespaldo,B.IdTercero,B.IdCliente,nomcliente,IdTipoDocCliente,B.NumDocumento,ValMonto,ValSaldo,FecRegistroC,FecRadicacion,IndEstado,ValFactura,a.IdUsuarioR,t.NomTercero,t.IdNaturaleza from cxcfacmanual a
+                    //string qryFacturaEnc = @"SELECT  b.numdocrespaldo,IdTipoDocRespaldo,B.IdTercero,B.IdCliente,nomcliente,IdTipoDocCliente,B.NumDocumento,ValMonto,ValSaldo,FecRegistroC,FecRadicacion,IndEstado,ValFactura,a.IdUsuarioR,t.NomTercero,t.IdNaturaleza from cxcfacmanual a
                     //inner join cxccuenta b on a.idcuenta=b.idcuenta 
                     //inner join genTercero t ON b.IdTercero=t.IdTercero
                     //WHERE b.numdocrespaldo=@nroFactura";
@@ -146,8 +146,9 @@ ORDER BY IdLocalizaTipo ";
                                 _direccionCliente = rdDatosCliente1.GetString(1);
                                 _localizacionCliente = rdDatosCliente1.GetInt32(3);
                                 _Pais = rdDatosCliente1.GetString(5);
-                                _departamento=rdDatosCliente1.GetString(7);
-                                if (rdDatosCliente1.GetSqlString(5).Equals("CO"))
+                                _Ciudad= rdDatosCliente1.GetString(2);
+                                _departamento =rdDatosCliente1.GetString(7);
+                                if (rdDatosCliente1.GetSqlString(5)=="CO")
                                 {
                                     _municipioCliente = rdDatosCliente1.GetString(4);
                                 }
@@ -181,7 +182,7 @@ ORDER BY IdLocalizaTipo ";
                     SqlCommand cmdDatosCliente2 = new SqlCommand(qryDatosCliente2, connx);
                     cmdDatosCliente2.Parameters.Add("@idLugar", SqlDbType.Int).Value = _localizacionCliente;
                     SqlDataReader rdDatosCliente2 = cmdDatosCliente2.ExecuteReader();
-                    if (rdDatosCliente2.HasRows && _Pais.Equals("CO"))
+                    if (rdDatosCliente2.HasRows && _Pais=="CO")
                     {
                         rdDatosCliente2.Read();
                         _departamento = rdDatosCliente2.GetString(2);
@@ -291,6 +292,7 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                     Ubicacion ubicacionCliente = new Ubicacion();
                     ubicacionCliente.pais = _Pais;
                     ubicacionCliente.codigoMunicipio = _municipioCliente;
+                    ubicacionCliente.ciudad = _Ciudad;
                     ubicacionCliente.direccion = _direccionCliente;
                     adquirienteTmp.ubicacion = ubicacionCliente;
                     ubicacionCliente.departamento = _departamento;
