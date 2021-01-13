@@ -365,7 +365,7 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                         }
                         else
                         {
-                            NotaDebitoEnviar.tipoOperacion = "22"; //Standar
+                            NotaDebitoEnviar.tipoOperacion = "32"; //Standar nota debito sin referencia a facturas
                         }
                     }
                     else
@@ -375,8 +375,17 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                 }
                 adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                 Ubicacion ubicacionCliente = new Ubicacion();
-                ubicacionCliente.pais = "CO";
-                ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
+                ubicacionCliente.pais = cliente.codigoPais;//"CO";
+
+                if (cliente.codigoPais == "CO")
+                {
+                    ubicacionCliente.codigoMunicipio = cliente.codMunicipio;// "00000"; // se ajusta para factura 6180330 Cliente Internacional
+                }
+                else
+                {
+                    ubicacionCliente.codigoMunicipio = "00000";
+                }
+                //ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
                 ubicacionCliente.direccion = cliente.direccion;
                 adquirienteTmp.ubicacion = ubicacionCliente;
                 documentoF2.adquiriente = adquirienteTmp;

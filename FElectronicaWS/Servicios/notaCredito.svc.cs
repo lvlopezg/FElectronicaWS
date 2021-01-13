@@ -124,13 +124,14 @@ WHERE idFactura = @idFactura";
                         detalle.Add(item);
                         return UtilidadRespuestas.insertarErrorND("NC", nroNotaCredito, "9901", "CUFE de la FacturaRelacionada No Encontado", DateTime.Now, detalle);
                     }
+                    /*
                     string qryNotaCredito = @"SELECT TOP 1 B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,(T.ValTotal + ISNULL(L.ValTotalIVA,0))   AS ValMonto,
 cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,(T.ValTotal + ISNULL(L.ValTotalIVA,0)) AS ValFactura,B.IdMovimiento,2 as 'Causal'  
 FROM cxcTipoMovimientoEfectoNotas A
 INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
 INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
 LEFT JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
-INNER JOIN facnotacredito F ON F.IdNotaCredito = @nroNotaCredito AND F.INDTOTAL=1
+INNER JOIN facnotacredito F ON F.IdNotaCredito = @nroNotaCredito AND F.INDTOTAL=1 and F.IdCausal=B.IdCausal
 INNER JOIN FACFACTURA T ON T.IDFACTURA = F.IdFactura
 LEFT JOIN FACFACTURAIVA L ON L.IDFACTURA=T.IDFACTURA
 where A.Indhabilitado=1 and C.IdMovimiento IS NULL
@@ -142,7 +143,7 @@ FROM cxcTipoMovimientoEfectoNotas A
 INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
 INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
 LEFT JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
-INNER JOIN facnotacredito F ON F.IdNotaCredito = @nroNotaCredito AND F.INDTOTAL=0  
+INNER JOIN facnotacredito F ON F.IdNotaCredito = @nroNotaCredito AND F.INDTOTAL=0  and F.IdCausal=B.IdCausal
 where A.Indhabilitado=1 and C.IdMovimiento IS NULL
 and B.NumDocumento=@nroNotaCredito and A.IndTipoNota='C'
 UNION
@@ -151,8 +152,12 @@ cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTip
 INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
 INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
 INNER JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
-where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C'";
+where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C'";//se agrega and F.IdCausal=B.IdCausal
                     SqlCommand cmdNotaCredito = new SqlCommand(qryNotaCredito, conn);
+                    cmdNotaCredito.Parameters.Add("@nroNotaCredito", SqlDbType.VarChar).Value = nroNotaCredito;
+                    cmdNotaCredito.Parameters.Add("@nroNotaCredito2", SqlDbType.Int).Value = nroNotaCredito; */
+                    SqlCommand cmdNotaCredito = new SqlCommand("spFACEDetalleNotasNC", conn);
+                    cmdNotaCredito.CommandType = CommandType.StoredProcedure;
                     cmdNotaCredito.Parameters.Add("@nroNotaCredito", SqlDbType.VarChar).Value = nroNotaCredito;
                     cmdNotaCredito.Parameters.Add("@nroNotaCredito2", SqlDbType.Int).Value = nroNotaCredito;
                     SqlDataReader rdNotaCredito = cmdNotaCredito.ExecuteReader();
@@ -281,8 +286,16 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                     Ubicacion ubicacionCliente = new Ubicacion();
                     ubicacionCliente.pais = cliente.codigoPais;
+                    if (cliente.codigoPais == "CO")
+                    {
+                        ubicacionCliente.codigoMunicipio = cliente.codMunicipio;// "00000"; // se ajusta para factura 6180330 Cliente Internacional
+                    }
+                    else
+                    {
+                        ubicacionCliente.codigoMunicipio = "00000";
+                    }
                     ubicacionCliente.departamento = cliente.Nombre_Depto;
-                    ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
+                    //ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
                     ubicacionCliente.direccion = cliente.direccion;
                     adquirienteTmp.ubicacion = ubicacionCliente;
                     documentoF2.adquiriente = adquirienteTmp;

@@ -294,7 +294,15 @@ WHERE A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito and A.IndTipoNota='C'
                     Ubicacion ubicacionCliente = new Ubicacion();
                     ubicacionCliente.pais = cliente.codigoPais;
                     ubicacionCliente.departamento = cliente.Nombre_Depto;
-                    ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
+                    //ubicacionCliente.codigoMunicipio = cliente.codMunicipio;
+                    if (cliente.codigoPais == "CO")
+                    {
+                        ubicacionCliente.codigoMunicipio = cliente.codMunicipio;// "00000"; // se ajusta para factura 6180330 Cliente Internacional
+                    }
+                    else
+                    {
+                        ubicacionCliente.codigoMunicipio = "00000";
+                    }
                     ubicacionCliente.direccion = cliente.direccion;
                     adquirienteTmp.ubicacion = ubicacionCliente;
                     documentoF2.adquiriente = adquirienteTmp;
