@@ -16,8 +16,7 @@ using System.Text;
 
 namespace FElectronicaWS.Servicios
 {
-    // NOTA: puede usar el comando "Rename" del menú "Refactorizar" para cambiar el nombre de clase "notaCreditoParticular" en el código, en svc y en el archivo de configuración a la vez.
-    // NOTA: para iniciar el Cliente de prueba WCF para probar este servicio, seleccione notaCreditoParticular.svc o notaCreditoParticular.svc.cs en el Explorador de soluciones e inicie la depuración.
+
     public class notaCreditoParticular : InotaCreditoParticular
     {
         private static Logger logFacturas = LogManager.GetCurrentClassLogger();
@@ -28,27 +27,13 @@ namespace FElectronicaWS.Servicios
             {
                 #region inicializar
                 Decimal _Valtotal = 0;
-                //Decimal _ValDescuento = 0;
-                //Decimal _ValDescuentoT = 0;
                 Decimal _ValPagos = 0;
-                //Decimal _ValImpuesto = 0;
                 Decimal _ValCobrar = 0;
                 DateTime _FecNotaCredito = DateTime.Now;
                 Int32 _idMovimiento = 0;
-                //Int32 _IdUsuarioR = 0;
                 Int32 _idTercero = 0;
-                //Int16 _naturalezaCliente = 0;
-                //Int16 _tipoPersona = 0;
                 Int32 _facturaRelacionada = 0;
-                //string _nombrePaciente = string.Empty;
-                //string _nroDocumentopaciente = string.Empty;
-                //Byte _TipoDocPaciente = 0;
-                //string _numDocCliente = string.Empty;
-                //Byte _tipoDocCliente = 0;
-                //string _razonSocial = string.Empty;
                 string _repLegal = string.Empty;
-                //string _RegimenFiscal = string.Empty;
-                //Int16 _idNaturaleza = 0;
                 string DescNota = string.Empty;
                 Int16 _codigoCausal = 0;
                 Int32 _tipoDocClienteDian = 0;
@@ -116,41 +101,6 @@ WHERE idFactura = @idFactura";
                         detalle.Add(item);
                         return UtilidadRespuestas.insertarErrorND("NC", nroNotaCredito, "9901", "CUFE de la FacturaRelacionada No Encontado", DateTime.Now, detalle);
                     }
-                    /*
-                    string qryNotaCredito = @"SELECT TOP 1 B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,(T.ValTotal + ISNULL(L.ValTotalIVA,0))   AS ValMonto,
-cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,(T.ValTotal + ISNULL(L.ValTotalIVA,0)) AS ValFactura,B.IdMovimiento,2 as 'Causal'  
-FROM cxcTipoMovimientoEfectoNotas A
-INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
-INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
-LEFT JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
-INNER JOIN facnotacredito F ON F.IdNotaCredito = @nroNotaCredito AND F.INDTOTAL=1 and F.IdCausal=B.IdCausal
-INNER JOIN FACFACTURA T ON T.IDFACTURA = F.IdFactura 
-LEFT JOIN FACFACTURAIVA L ON L.IDFACTURA=T.IDFACTURA
-where A.Indhabilitado=1 and C.IdMovimiento IS NULL
-and B.NumDocumento=@nroNotaCredito and A.IndTipoNota='C'
-UNION
-SELECT B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,B.ValMonto,
-cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,cxcCta.ValFactura,B.IdMovimiento,6 as 'Causal' 
-FROM cxcTipoMovimientoEfectoNotas A
-INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
-INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
-LEFT JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
-INNER JOIN facnotacredito F ON F.IdNotaCredito = @nroNotaCredito AND F.INDTOTAL=0 and F.IdCausal=B.IdCausal  
-where A.Indhabilitado=1 and C.IdMovimiento IS NULL
-and B.NumDocumento=@nroNotaCredito and A.IndTipoNota='C'
-UNION
-SELECT B.IdCuenta,B.NumDocumento,B.IdCausal,B.fecMovimiento,B.FecRegistro,B.ValMonto,
-cxcCta.IdCuenta,cxcCta.IdTercero,cxcCta.IdCliente,cxcCta.NomCliente,cxcCta.IdTipoDocCliente,cxcCta.NumDocumento,cxcCta.NumDocRespaldo,cxcCta.ValFactura,B.IdMovimiento,6 as 'Causal' FROM cxcTipoMovimientoEfectoNotas A
-INNER JOIN cxcCarteraMovi B ON A.IdTipoMovimiento=B.IdTipoMovimiento
-INNER JOIN cxcCuenta cxcCta ON cxcCta.IdCuenta=B.IdCuenta
-INNER JOIN cxcCarteraMoviNoNota C ON B.IdMovimiento=C.IdMovimiento
-where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C'";// se agrega and F.IdCausal=B.IdCausal
-
-                    SqlCommand cmdNotaCredito = new SqlCommand(qryNotaCredito, conn);
-                    cmdNotaCredito.Parameters.Add("@nroNotaCredito", SqlDbType.VarChar).Value = nroNotaCredito;
-                    cmdNotaCredito.Parameters.Add("@nroNotaCredito2", SqlDbType.Int).Value = nroNotaCredito;
-                    */
-
                     SqlCommand cmdNotaCredito = new SqlCommand("spFACEDetalleNotasNC", conn);
                     cmdNotaCredito.CommandType = CommandType.StoredProcedure;
                     cmdNotaCredito.Parameters.Add("@nroNotaCredito", SqlDbType.VarChar).Value = nroNotaCredito;
@@ -165,9 +115,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                         _Valtotal = Decimal.Parse(valorTNota.ToString());
                         _ValCobrar = Decimal.Parse(valorTNota.ToString());
                         _FecNotaCredito = rdNotaCredito.GetDateTime(4);
-                        //_facturaRelacionada = Int32.Parse(rdNotaCredito.GetString(12));
                         _facturaRelacionada = nroFactura;
-                        //_idTercero = rdNotaCredito.GetInt32(7);
                         _idTercero = cliente.IdTercero;
                         _codigoCausal = short.Parse(rdNotaCredito.GetInt32(15).ToString());
                     }
@@ -188,99 +136,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     formaPagoTmp.tipoPago = 1;
                     formaPagoTmp.codigoMedio = "10";
                     NotaCreditoEnviar.formaPago = formaPagoTmp;
-
-                    #region MyRegion
-                    //               string strTercero = "SELECT IdTipoDoc,NumDocumento,NomTercero,idnaturaleza FROM genTercero WHERE IdTercero=@tercero";
-                    //SqlCommand cmdTercero = new SqlCommand(strTercero, conn);
-                    //cmdTercero.Parameters.Add("@tercero", SqlDbType.Int).Value = _idTercero;
-
-                    //SqlDataReader rdtercero = cmdTercero.ExecuteReader();
-                    //if (rdtercero.HasRows)
-                    //{
-                    //	rdtercero.Read();
-                    //	_tipoDocCliente = rdtercero.GetByte(0);
-                    //	_numDocCliente = rdtercero.GetString(1);
-                    //	_razonSocial = rdtercero.GetString(2);
-                    //	_idNaturaleza = rdtercero.GetInt16(3);
-                    //}
-
-                    //****************** CLIENTE
-                    //					using (SqlConnection connx = new SqlConnection(Properties.Settings.Default.DBConexion))
-                    //					{     // Informacion General
-                    //						connx.Open();
-                    //						string qryDatosCliente1 = @"SELECT IdLocalizaTipo,DesLocalizacion,B.nom_dipo,A.IdLugar,RIGHT(B.cod_dipo,5) FROM genTerceroLocaliza A
-                    //LEFT JOIN GEN_DIVI_POLI B ON A.IdLugar=B.IdLugar
-                    //WHERE IdTercero=@idTercero and IdLocalizaTipo IN (2,3)
-                    //ORDER BY IdLocalizaTipo";
-                    //						SqlCommand cmdDatosCliente1 = new SqlCommand(qryDatosCliente1, connx);
-                    //						cmdDatosCliente1.Parameters.Add("@idTercero", SqlDbType.Int).Value = _idTercero;
-                    //						SqlDataReader rdDatosCliente1 = cmdDatosCliente1.ExecuteReader();
-                    //						if (rdDatosCliente1.HasRows)
-                    //						{
-                    //							while (rdDatosCliente1.Read())
-                    //							{
-                    //								if (rdDatosCliente1.GetInt32(0) == 2)
-                    //								{
-                    //                                    _direccionCliente = rdDatosCliente1.GetString(1);
-                    //                                    _municipioCliente = rdDatosCliente1.GetString(4);
-                    //                                    _localizacionCliente = rdDatosCliente1.GetInt32(3);
-                    //                                }
-                    //								else if (rdDatosCliente1.GetInt32(0) == 3)
-                    //								{
-                    //                                    if (rdDatosCliente1.GetString(1).Length>10)
-                    //                                    {
-                    //									    _telefonoCliente = rdDatosCliente1.GetString(1).Substring(0,10);
-                    //                                    }
-                    //                                    else
-                    //                                    {
-                    //                                        _telefonoCliente = rdDatosCliente1.GetString(1);
-                    //                                    }
-                    //								}
-                    //							}
-                    //						}
-                    //					string qryDatosCliente2 = @"SELECT COD_DEPTO,COD_MPIO,DPTO,NOM_MPIO FROM GEN_DIVI_POLI A
-                    //                    INNER JOIN HUSI_Divipola HB ON a.num_ptel=COD_DEPTO
-                    //                    WHERE a.IdLugar=@idLugar";
-                    //						SqlCommand cmdDatosCliente2 = new SqlCommand(qryDatosCliente2, connx);
-                    //						cmdDatosCliente2.Parameters.Add("@idLugar", SqlDbType.Int).Value = _localizacionCliente;
-                    //						SqlDataReader rdDatosCliente2 = cmdDatosCliente2.ExecuteReader();
-                    //						if (rdDatosCliente2.HasRows)
-                    //						{
-                    //							rdDatosCliente2.Read();
-                    //							_departamento = rdDatosCliente2.GetString(2);
-                    //						}
-
-                    //						string qryDatosCliente3 = @"SELECT A.Correo FROM concontratocorreo A
-                    //INNER JOIN facFactura B ON A.IdContrato=B.IdContrato
-                    //WHERE A.indhabilitado=1 AND B.idFactura=@idFactura
-                    //UNION ALL
-                    //SELECT A.Deslocalizacion As Correo FROM gentercerolocaliza A
-                    //INNER JOIN conContrato C ON C.IdTercero=A.IdTercero
-                    //INNER JOIN  facFactura D ON D.IdContrato=C.IdContrato
-                    //LEFT JOIN concontratocorreo B ON  B.indhabilitado=1 and B.idcontrato=D.IdContrato  
-                    //WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.IdFactura=@idFactura
-                    //UNION ALL
-                    //SELECT b.Deslocalizacion As Correo from cxccuenta a 
-                    //INNER JOIN gentercerolocaliza b on a.idtercero=b.idtercero and b.IdLocalizaTipo=1 and b.indhabilitado=1
-                    //LEFT JOIN  facfactura c on a.numdocrespaldo=convert(varchar,c.idfactura)
-                    //WHERE a.IdTipoDocRespaldo=6 and c.idfactura is null and a.numdocrespaldo= convert(varchar,@idFactura )";
-                    //						SqlCommand cmdDatosCliente3 = new SqlCommand(qryDatosCliente3, connx);
-                    //						cmdDatosCliente3.Parameters.Add("@idFactura", SqlDbType.Int).Value = _facturaRelacionada;
-                    //						SqlDataReader rdDatosCliente3 = cmdDatosCliente3.ExecuteReader();
-                    //						if (rdDatosCliente3.HasRows)
-                    //						{
-                    //							rdDatosCliente3.Read();
-                    //							_correoCliente = rdDatosCliente3.GetString(0);
-                    //						}
-                    //                        else
-                    //                        {
-                    //                            _correoCliente = "";
-                    //                        }
-                    //					} 
-                    #endregion
-
                     Adquiriente adquirienteTmp = new Adquiriente();
-
                     using (SqlConnection connXX = new SqlConnection(Properties.Settings.Default.DBConexion))
                     {
                         connXX.Open();
@@ -293,15 +149,6 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                         logFacturas.Info($"_tipoDocClienteDian:{_tipoDocClienteDian}");
                     }
                     adquirienteTmp.identificacion = cliente.NroDoc_Cliente;
-
-                    //if (cliente.TipoDoc_Cliente == 1)//TODO: validar la Homologacion para este campo
-                    //{
-                    //    adquirienteTmp.tipoIdentificacion = 31;
-                    //}
-                    //else if (cliente.TipoDoc_Cliente == 2)
-                    //{
-                    //}
-
                     adquirienteTmp.tipoIdentificacion = _tipoDocClienteDian;
                     adquirienteTmp.codigoInterno = cliente.IdTercero.ToString();
                     adquirienteTmp.razonSocial = $"{cliente.NomCliente} {cliente.ApeCliente}";
@@ -317,7 +164,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     {
                         adquirienteTmp.tipoRegimen = "49";
                     }
-                    //TODO: Aqui insertar lo que se defina de Responsabilidades  RUT documentoF2.adquiriente.responsabilidadesRUT
+
                     if (cliente.IdNaturaleza == 3)
                     {
                         adquirienteTmp.tipoPersona = "1";
@@ -372,7 +219,6 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
                     Ubicacion ubicacionCliente = new Ubicacion();
                     ubicacionCliente.pais = cliente.codigoPais;//"CO";
-                    //ubicacionCliente.codigoMunicipio = cliente.cod_municipio;
                     if (cliente.codigoPais == "CO")
                     {
                         ubicacionCliente.codigoMunicipio = cliente.cod_municipio;// "00000"; // se ajusta para factura 6180330 Cliente Internacional
@@ -385,12 +231,13 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                     adquirienteTmp.ubicacion = ubicacionCliente;
                     documentoF2.adquiriente = adquirienteTmp;
                     double TotalGravadoIva = 0;
-                    //double TotalGravadoIca = 0;
                     List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
                     NotificacionesItem notificaItem = new NotificacionesItem();
                     notificaItem.tipo = 1;
-                    List<string> valorNotificacion = new List<string>();
-                    valorNotificacion.Add(cliente.cuenta_correo.Trim());
+                    List<string> valorNotificacion = new List<string>
+                    {
+                        cliente.cuenta_correo.Trim()
+                    };
                     notificaItem.valor = valorNotificacion;
                     notificaciones.Add(notificaItem);
                     NotaCreditoEnviar.notificaciones = notificaciones;
@@ -429,7 +276,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                                     tributosWRKIva.porcentaje = 0;
                                     tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
                                     tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
-                                    TotalGravadoIva = TotalGravadoIva + double.Parse(_Valtotal.ToString());
+                                    TotalGravadoIva += double.Parse(_Valtotal.ToString());
                                     tributosWRKIva.tributoFijoUnidades = 0;
                                     tributosWRKIva.tributoFijoValorImporte = 0;
                                     listaTributos.Add(tributosWRKIva);
@@ -506,12 +353,15 @@ WHERE IdMovimiento = @idMovimiento";
                     itemAfectado.numeroDocumento = $"{Properties.Settings.Default.Prefijo}-{_facturaRelacionada.ToString()}";//todo: Ingresar el nro de Factura o Nota;
                     itemAfectado.UUID = codCufeFactura; //todo:Ingresar el UUID del Docuemtno afectado
                     itemAfectado.codigoCausal = _codigoCausal;
-                    //itemAfectado.fecha = formatosFecha.formatofecha(DateTime.Now); //todo: registrar fechz de la factura o Nota afectada
-                    List<string> observaciones = new List<string>();
-                    observaciones.Add(ObservacionesNota);
+                    List<string> observaciones = new List<string>
+                    {
+                        ObservacionesNota
+                    };
                     itemAfectado.observaciones = observaciones;
-                    List<DocumentosAfectadosItem> DocumentosAfectados = new List<DocumentosAfectadosItem>();
-                    DocumentosAfectados.Add(itemAfectado);
+                    List<DocumentosAfectadosItem> DocumentosAfectados = new List<DocumentosAfectadosItem>
+                    {
+                        itemAfectado
+                    };
                     NotaCreditoEnviar.documentosAfectados = DocumentosAfectados;
 
                     documentoF2.detalles = detalleProductos;
@@ -549,8 +399,6 @@ WHERE IdMovimiento = @idMovimiento";
                     logFacturas.Info("Numero de Productos Procesados, para JSon:" + detalleProductos.Count);
                     try
                     {
-
-                        //string urlConsumo = Properties.Settings.Default.urlFacturaElectronica + Properties.Settings.Default.recursoFacturaE;
                         string urlConsumo = Properties.Settings.Default.urlFacturaElectronica;// + Properties.Settings.Default.recursoFacturaE;
                         logFacturas.Info("URL de Request:" + urlConsumo);
                         HttpWebRequest request = WebRequest.Create(urlConsumo) as HttpWebRequest;
@@ -564,17 +412,13 @@ WHERE IdMovimiento = @idMovimiento";
                         string Clave = Properties.Settings.Default.clave;
                         string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
                         request.Headers.Add("Authorization", "Basic " + credenciales);
-
                         Byte[] data = Encoding.UTF8.GetBytes(NotaCreditoJson);
-
                         Stream st = request.GetRequestStream();
                         st.Write(data, 0, data.Length);
                         st.Close();
-
                         int loop1, loop2;
                         NameValueCollection valores;
                         valores = request.Headers;
-
                         // Pone todos los nombres en un Arreglo
                         string[] arr1 = valores.AllKeys;
                         for (loop1 = 0; loop1 < arr1.Length; loop1++)
@@ -617,15 +461,12 @@ WHERE IdMovimiento = @idMovimiento";
                                     {
                                         try
                                         {
-                                            //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
                                             string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
                                             logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
                                             webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
-                                            //System.Threading.Thread.Sleep(1000);
                                             logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
                                             carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
                                             webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
-                                            //System.Threading.Thread.Sleep(1000);
                                             logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
                                             using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                             {
@@ -651,7 +492,6 @@ VALUES(@IdNota, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                         {
                                                             cmdInsertarAdvertencia.Parameters["@IdNota"].Value = nroNotaCredito;
                                                             cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
-                                                            //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
                                                             cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
                                                             cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                             if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)

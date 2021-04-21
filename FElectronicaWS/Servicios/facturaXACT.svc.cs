@@ -62,7 +62,7 @@ namespace FElectronicaWS.Servicios
                 facturaEnviar.subTipoDocumento = "01";
                 facturaEnviar.tipoOperacion = "10";
                 facturaEnviar.generaRepresentacionGrafica = false;
-
+                
                // ClienteJuridico cliente = new ClienteJuridico();
                 string urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteJuridico?idFactura={nroFactura}";
                 logFacturas.Info("URL de Request:" + urlClientes);
@@ -130,15 +130,26 @@ WHERE IdFactura =  @nroFactura";
                             }
                         }
                     }
-                } 
-                string formatoWrk = formatosFecha.formatofecha(_FecFactura);
+                }
+        //********************* Extension Sector Salud
+        extensionSalud itemCamposSalud = new extensionSalud();  //TODO: Implementacion de Campos de Salud
+        List<extensionSalud> CamposSalud = new List<extensionSalud>();
+        
+
+
+
+        documentoF2.extensionesSalud=CamposSalud;    
+        CamposSalud.Add(itemCamposSalud);
+
+        //********************* Fin Sector Salud
+        string formatoWrk = formatosFecha.formatofecha(_FecFactura);
                 facturaEnviar.fechaEmision = formatoWrk.Split('T')[0];
                 facturaEnviar.horaEmision = formatoWrk.Split('T')[1];
                 facturaEnviar.moneda = "COP";
                 formaPagoTmp.tipoPago = 1;
                 formaPagoTmp.codigoMedio = "10";
                 facturaEnviar.formaPago=formaPagoTmp;
-                   
+                
                 List<DetallesItem> detalleProductos = new List<DetallesItem>();
                 //****************** CLIENTE
                 //  Variables Inicializacion

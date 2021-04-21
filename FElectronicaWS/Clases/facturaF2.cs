@@ -36,6 +36,10 @@ namespace FElectronicaWS.Clases
         /// </summary>
         [JsonProperty("tributos", NullValueHandling = NullValueHandling.Ignore)]
         public List<TributosItem> tributos { get; set; }
+
+		[JsonProperty("extensionesSalud", NullValueHandling = NullValueHandling.Ignore)]
+		public List<extensionSalud> extensionesSalud { get; set; }
+
         ///<summary>
         /// Detalle de las facturas o documento que se esta enviando
         ///</summary>
@@ -1229,6 +1233,78 @@ namespace FElectronicaWS.Clases
         [JsonProperty("tributoFijoValorImporteMoneda", NullValueHandling = NullValueHandling.Ignore)]
         public string tributoFijoValorImporteMoneda { get; set; }
     }
+
+	public class extensionSalud
+	{
+		[JsonProperty("codigoPrestador", NullValueHandling = NullValueHandling.Ignore)]
+		public string codigoPrestador{get;set;}
+
+		[JsonProperty("tipoDocumentoIdentificacion", NullValueHandling = NullValueHandling.Ignore)]
+		public string tipoDocumentoIdentificacion{get;set;}
+		
+		[JsonProperty("numeroIdentificacion", NullValueHandling = NullValueHandling.Ignore)]
+		public string numeroIdentificacion{get;set;}
+		
+		[JsonProperty("primerApellido", NullValueHandling = NullValueHandling.Ignore)]
+		public string primerApellido{get;set;}
+
+		[JsonProperty("segundoApellido", NullValueHandling = NullValueHandling.Ignore)]
+		public string segundoApellido{get;set;}
+
+		[JsonProperty("primerNombre", NullValueHandling = NullValueHandling.Ignore)]
+		public string primerNombre{get;set;}
+
+		[JsonProperty("otrosNombres", NullValueHandling = NullValueHandling.Ignore)]
+		public string otrosNombres{get;set;}
+
+		[JsonProperty("tipoDeUsuario", NullValueHandling = NullValueHandling.Ignore)]
+		public string tipoDeUsuario{get;set;}
+
+		[JsonProperty("modalidadesContratacion", NullValueHandling = NullValueHandling.Ignore)]
+		public string modalidadesContratacion{get;set;}
+
+		[JsonProperty("cobertura", NullValueHandling = NullValueHandling.Ignore)]
+		public string cobertura{get;set;}
+		
+		[JsonProperty("numeroAutorizacion", NullValueHandling = NullValueHandling.Ignore)]
+		public string numeroAutorizacion{get;set;}
+
+		[JsonProperty("numeroMIPRES", NullValueHandling = NullValueHandling.Ignore)]
+		public string numeroMIPRES{get;set;}
+
+		[JsonProperty("numeroIdPrescripcion", NullValueHandling = NullValueHandling.Ignore)]
+		public string numeroIdPrescripcion{get;set;}
+
+		[JsonProperty("numeroContrato", NullValueHandling = NullValueHandling.Ignore)]
+		public string numeroContrato { get; set; }
+
+		[JsonProperty("numeroPoliza", NullValueHandling = NullValueHandling.Ignore)]
+		public string numeroPoliza { get; set; }
+
+		[JsonProperty("fechaInicioFacturacion", NullValueHandling = NullValueHandling.Ignore)]
+		public DateTime fechaInicioFacturacion { get; set; }
+
+		[JsonProperty("fechaFinFacturacion", NullValueHandling = NullValueHandling.Ignore)]
+		public DateTime fechaFinFacturacion { get; set; }
+
+		[JsonProperty("copago", NullValueHandling = NullValueHandling.Ignore)]
+		public Int64 copago { get; set; }
+
+		[JsonProperty("cuotaModeradora", NullValueHandling = NullValueHandling.Ignore)]
+		public Int64 cuotaModeradora { get; set; }
+
+		[JsonProperty("cuotaRecuperacion", NullValueHandling = NullValueHandling.Ignore)]
+		public Int64 cuotaRecuperacion { get; set; }
+
+		[JsonProperty("pagosCompartidos", NullValueHandling = NullValueHandling.Ignore)]
+		public Int64 pagosCompartidos { get; set; }
+
+	}
+
+
+
+
+
 
     //public class Root
     //{
