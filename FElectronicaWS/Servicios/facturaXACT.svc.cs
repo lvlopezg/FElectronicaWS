@@ -134,17 +134,20 @@ WHERE IdFactura =  @nroFactura";
             }
           }
         }
+        #region Extension Salud
         //********************* Extension Sector Salud ****************************************************************
         extensionSalud itemExtensionSalud = new extensionSalud();  //TODO: Implementacion de Campos de Salud
         List<extensionSalud> extencionesSalud = new List<extensionSalud>();
 
-        using (SqlConnection conn=new SqlConnection(Properties.Settings.Default.DBConexion))
+        using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
         {
+
+          //****Prestador
           conn.Open();
           string qryPrestador = "SELECT ValConstanteT FROM genConstante WHERE CodConstante =@CodConstante";
           SqlCommand cmdPrestador = new SqlCommand(qryPrestador, conn);
-          cmdPrestador.Parameters.Add("",SqlDbType.VarChar).Value="CPFE";
-          SqlDataReader rdPrestador =cmdPrestador.ExecuteReader();
+          cmdPrestador.Parameters.Add("", SqlDbType.VarChar).Value = "CPFE";
+          SqlDataReader rdPrestador = cmdPrestador.ExecuteReader();
           if (rdPrestador.HasRows)
           {
             rdPrestador.Read();
@@ -155,30 +158,157 @@ WHERE IdFactura =  @nroFactura";
             logFacturas.Warn("!! No fue posible obtener el codigo de Prestador !!");
           }
 
-          string qryPaciente = "select d.CodTipoDoc,c.NumDocumento, c.ApeCliente, c.NomCliente FROM facFactura a"+
-                               "INNER JOIN admAtencion b on b.IdAtencion = a.IdDestino"+
-                               "INNER JOIN admCliente c on c.IdCliente = b.IdCliente"+
-                               "INNER JOIN genTipoDoc d on d.IdTipoDoc = c.IdTipoDoc"+
-                               "WHERE a.IdFactura =@idFactura";
-          SqlCommand cmdPaciente = new SqlCommand(qryPaciente,conn);
+          //*********Numero y Tipo de Documento y Nombres y Apellidos Campos 2,3,4,5,6,7
+          string qryDatosPac = "SELECT d.CodTipoDoc , c.NumDocumento, c.ApeCliente, c.NomCliente FROM facFactura a " +
+            "INNER JOIN admAtencion b on b.IdAtencion = a.IdDestino" +
+            "INNER JOIN admCliente c on c.IdCliente = b.IdCliente" +
+            "INNER JOIN genTipoDoc d on d.IdTipoDoc = c.IdTipoDoc" +
+            "WHERE a.IdFactura =@idFactura";
+
+          SqlCommand cmdPaciente = new SqlCommand(qryDatosPac, conn);
           cmdPaciente.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
           SqlDataReader rdPaciente = cmdPaciente.ExecuteReader();
           if (rdPaciente.HasRows)
           {
             rdPaciente.Read();
-            itemExtensionSalud.tipoDocumentoIdentificacion = rdPaciente.GetString(0);
+            itemExtensionSalud.tipoDocumentoIdentificacion = rdPaciente.GetString(0).Equals("NV") ? "CN" : rdPaciente.GetString(0);
             itemExtensionSalud.numeroIdentificacion = rdPaciente.GetString(1);
-            string[] apellidos = rdPaciente.GetString(2).Split(' ');
-            string[ ] nombres = rdPaciente.GetString(3).Split(' ');
-
+            string[ ] apellidos = UtilidadesFactura.separarApellidos(rdPaciente.GetString(2));
+            string[ ] nombres = UtilidadesFactura.separarNombres(rdPaciente.GetString(3));
+          }
+          //********* Tipo de Usuario y Poliza: Campo 8 y 15
+          string qryTipoUsua = "SELECT c.idTipoUsuario,C.numPoliza,*  ----esta sin definir en la Tabla  admAtencionContrato" +
+            "FROM facFactura a" +
+            "INNER JOIN admAtencion b on b.IdAtencion = a.IdDestino" +
+            "INNER JOIN admAtencionContrato c on c.IdAtencion = b.IdAtencion and c.OrdPrioridad = 1" +
+            "INNER JOIN genLista d on d.IdLista = c.idTipoUsuario" +
+            "WHERE a.IdFactura = @idFactura ";
+          SqlCommand cmdTipoUsua = new SqlCommand(qryTipoUsua, conn);
+          cmdTipoUsua.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdTipoUsua = cmdTipoUsua.ExecuteReader();
+          if (rdTipoUsua.HasRows)
+          {
+            rdTipoUsua.Read();
+            itemExtensionSalud.tipoDeUsuario = rdTipoUsua.GetInt16(0).ToString();
+            itemExtensionSalud.numeroPoliza = rdTipoUsua.GetInt16(1).ToString();
           }
 
+          //********* Campo 9
+          string qryContyPago = "SELECT a.idContratoYpago" +
+            "FROM facFactura a" +
+            "INNER JOIN genLista d on d.IdLista = a.idContratoYpago" +
+            "WHERE a.idFactura = @idFactura";//TODO:Origen de NOmbre de Modalidades de Contratacion
+          SqlCommand cmdContyPaso = new SqlCommand(qryContyPago, conn);
+          cmdContyPaso.Parameters.Add("@idFactura", SqlDbType.Int).Value=nroFactura;
+          SqlDataReader rdContyPaso = cmdContyPaso.ExecuteReader();
+          if (rdContyPaso.HasRows)
+          {
+            rdContyPaso.Read();
+            itemExtensionSalud.modalidadesContratacion = rdContyPaso.GetString(0).ToString();
+          }
+          //*************** Campo 10 - Cobertura 
+          string qryCobertura = "";//TODO: DEfinir Campo Cobertura
+          SqlCommand cmdCobertura = new SqlCommand(qryCobertura, conn);
+          cmdCobertura.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdCobertura = cmdCobertura.ExecuteReader();
+          if (rdCobertura.HasRows)
+          {
+            rdCobertura.Read();
+            itemExtensionSalud.cobertura = rdCobertura.GetString(0);
+          }
+
+          //*************** Campo 11 - Autorizaciones
+          string qryAutorizaciones = "";
+          SqlCommand cmdAutorizaciones = new SqlCommand(qryAutorizaciones,conn);
+          cmdAutorizaciones.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdAutorizaciones = cmdAutorizaciones.ExecuteReader();
+          if (rdAutorizaciones.HasRows)
+          {
+            List<string> Autorizaciones = new List<string>();
+            while (rdAutorizaciones.Read())
+            {
+              Autorizaciones.Add(rdAutorizaciones.GetString(0));
+            }
+            itemExtensionSalud.numeroAutorizacion = Autorizaciones;
+          }
         }
+          // Campo 12 - Nro mi Pres
+        string qryNroMiPres = "";
+        SqlCommand cmdNroMiPres = new SqlCommand(qryNroMiPres, conn);
+        cmdNroMiPres.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+        SqlDataReader rdNroMiPres = cmdNroMiPres.ExecuteReader();
+        if (rdNroMiPres.HasRows)
+        {
+          List<string> NumerosMiPres = new List<string>();
+          while (rdNroMiPres.Read())
+          {
+            NumerosMiPres.Add(rdNroMiPres.GetString(0));
+          }
+          itemExtensionSalud.numeroMIPRES = NumerosMiPres;
+        }
+        //**************** Campo Nro 13 Numero id Suministro
+        string qryNroSuministro = "";
+        SqlCommand cmdNroSuministro = new SqlCommand(qryNroSuministro, conn);
+        cmdNroSuministro.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+        SqlDataReader rdNroSuministro = cmdNroSuministro.ExecuteReader();
+        if (rdNroSuministro.HasRows)
+        {
+          List<string> NumerosSuministro = new List<string>();
+          while (rdNroSuministro.Read())
+          {
+            NumerosSuministro.Add(rdNroMiPres.GetString(0));
+          }
+          itemExtensionSalud.numeroIdPrescripcion = NumerosSuministro;
+        }
+
+        //****************** Campo Numero 14 Numero de Contrato
+        string qryContrato = "SELECT NumeroContrato FROM conContrato";
+        SqlCommand cmdContrato = new SqlCommand(qryContrato, conn);
+        cmdContrato.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+        SqlDataReader rdContrato = cmdContrato.ExecuteReader();
+        if (rdContrato.HasRows)
+        {
+          rdContrato.Read();
+          itemExtensionSalud.numeroContrato = rdContrato.GetString(0);
+        }
+
+        //**************** Campos Numero 15 y 16 Fecha de Inicio y Fecha Final de Atencion
+        string qryAtencion = "SELECT FecIngreso,FecEgreso FROM admAtencion WHERE IdAtencion=@idAtencion";
+        SqlCommand cmdAtencion = new SqlCommand(qryAtencion, conn);
+        cmdAtencion.Parameters.Add("@idAtencion", SqlDbType.Int).Value = nroAtencion;
+        SqlDataReader rdAtencion = cmdAtencion.ExecuteReader();
+        if (rdAtencion.HasRows)
+        {
+          rdAtencion.Read();
+          itemExtensionSalud.fechaInicioFacturacion = rdContrato.GetDateTime(0);
+          itemExtensionSalud.fechaFinFacturacion = rdContrato.GetDateTime(1);
+        }
+
+        //***************** Campo 17  ----Copago
+
+
+
+        //***************** Campo 18  ---- Moderadora
+
+
+
+
+        //**************** Campo 19  ------Recuperacion
+
+
+
+        //**************** Campo 20 ------- Pagos Compartidos
+
+
+
+        //*************** Campo 21
+
 
 
         extencionesSalud.Add(itemExtensionSalud);
 
         documentoF2.extensionesSalud = extencionesSalud;
+        #endregion
         //********************* Fin Sector Salud **********************************************************************
         string formatoWrk = formatosFecha.formatofecha(_FecFactura);
         facturaEnviar.fechaEmision = formatoWrk.Split('T')[0];
@@ -265,9 +395,7 @@ WHERE IdFactura =  @nroFactura";
             responsanbilidadesR.Add("R-99-PN");
           }
         }
-
         adquirienteTmp.responsabilidadesRUT = responsanbilidadesR;
-
         Ubicacion ubicacionCliente = new Ubicacion();
         ubicacionCliente.pais = cliente.codigoPais;
         ubicacionCliente.departamento = cliente.Nombre_Depto;
@@ -454,7 +582,7 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o
           nombre = "Iva",
           esImpuesto = true,
           valorImporteTotal = 0,
-          detalles = tributosDetalle // DEtalle de los Ivas
+          detalles = tributosDetalle // Detalle de los Ivas
         };
         tributosTMP.Add(itemTributo);
         documentoF2.tributos = tributosTMP;
