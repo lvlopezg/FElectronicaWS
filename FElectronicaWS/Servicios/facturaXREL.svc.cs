@@ -280,7 +280,6 @@ ORDER BY IdLocalizaTipo";
                   _telefonoCliente = _telefonoCliente.Substring(0, 10);
                 }
               }
-
             }
           }
 

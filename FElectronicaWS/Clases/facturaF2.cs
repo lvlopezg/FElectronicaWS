@@ -418,6 +418,7 @@ namespace FElectronicaWS.Clases
     /// </summary>
     [JsonProperty("fecha", NullValueHandling = NullValueHandling.Ignore)]
     public string fecha { get; set; }
+
     /// <summary>
     /// Hora de la entrega, en HUSI, corresponde a la Hora de Egreso
     /// </summary>
@@ -511,6 +512,7 @@ namespace FElectronicaWS.Clases
     [JsonProperty("fecha", NullValueHandling = NullValueHandling.Ignore)]
     public string fecha { get; set; }
   }
+
 
   public class FormaPago
   {
@@ -1238,7 +1240,7 @@ namespace FElectronicaWS.Clases
   public class extensionSalud
   {
     /// <summary>
-    /// Campo Numero Uno
+    /// Campo Codigo de Prestador del HUSI
     /// </summary>
     [JsonProperty("codigoPrestador", NullValueHandling = NullValueHandling.Ignore,Order =1)]
     public string codigoPrestador { get; set; }

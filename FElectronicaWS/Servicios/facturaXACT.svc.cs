@@ -135,7 +135,6 @@ WHERE IdFactura =  @nroFactura";
           }
         }
 
-        //********************* Fin Sector Salud **********************************************************************
         string formatoWrk = formatosFecha.formatofecha(_FecFactura);
         facturaEnviar.fechaEmision = formatoWrk.Split('T')[0];
         facturaEnviar.horaEmision = formatoWrk.Split('T')[1];
@@ -242,28 +241,6 @@ WHERE IdFactura =  @nroFactura";
         //TODO:Definir Los pagos por Copago y Cuota Moderadora, si se envian como Anticipos y Abonos
         //TODO:Definir si aplica para algun caso. Cargos y Descuentos
 
-        //List<TributosItem> tributosTMP = new List<TributosItem>();
-        //List<DetalleTributos> tributosDetalle = new List<DetalleTributos>();
-        //DetalleTributos detalleTributos = new DetalleTributos() // Un Objeto por cada Tipo de Iva
-        //{
-        //    valorImporte = 0,
-        //    valorBase = 0,
-        //    porcentaje = 0
-        //};
-        //tributosDetalle.Add(detalleTributos);
-        //TributosItem itemTributo = new TributosItem()
-        //{
-        //    id = "01", //Total de Iva 
-        //    nombre = "Iva",
-        //    esImpuesto = true,
-        //    valorImporteTotal = 0,
-        //    detalles = tributosDetalle // DEtalle de los Ivas
-        //};
-        //tributosTMP.Add(itemTributo);
-        //documentoF2.tributos = tributosTMP;
-        /////<summary>
-        /////Inicio de Totales de la Factura
-        ///// </summary> 
         #endregion
         double TotalGravadoIva = 0;
         //double TotalGravadoIca = 0;
@@ -273,11 +250,12 @@ WHERE IdFactura =  @nroFactura";
         //anticipoWrk.valorAnticipo = double.Parse(_ValPagos.ToString());
         //anticiposWrk.Add(anticipoWrk);
         documentoF2.anticipos = anticiposWrk;
+
+
         #region Extension Salud
         //********************* Extension Sector Salud ****************************************************************
         extensionSalud itemExtensionSalud = new extensionSalud();  //TODO: Implementacion de Campos de Salud
         List<extensionSalud> extencionesSalud = new List<extensionSalud>();
-
         using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
         {
 
@@ -285,7 +263,7 @@ WHERE IdFactura =  @nroFactura";
           conn.Open();
           string qryPrestador = "SELECT ValConstanteT FROM genConstante WHERE CodConstante =@CodConstante";
           SqlCommand cmdPrestador = new SqlCommand(qryPrestador, conn);
-          cmdPrestador.Parameters.Add("", SqlDbType.VarChar).Value = "CPFE";
+          cmdPrestador.Parameters.Add("@CodConstante", SqlDbType.VarChar).Value = "CPFE";
           SqlDataReader rdPrestador = cmdPrestador.ExecuteReader();
           if (rdPrestador.HasRows)
           {
@@ -315,8 +293,8 @@ WHERE IdFactura =  @nroFactura";
             string[ ] apellidos = UtilidadesFactura.separarApellidos(rdPaciente.GetString(2));
             string[ ] nombres = UtilidadesFactura.separarNombres(rdPaciente.GetString(3));
           }
-          //********* Tipo de Usuario y Poliza: Campo 8 y 15
-          string qryTipoUsua = "SELECT c.idTipoUsuario,C.numPoliza,*  ----esta sin definir en la Tabla  admAtencionContrato" +
+          //********* Tipo de Usuario y Poliza: Campo 8 y 15 ,*  ----esta sin definir en la Tabla  admAtencionContrato ???
+          string qryTipoUsua = "SELECT c.idTipoUsuario,C.numPoliza" +
             "FROM facFactura a" +
             "INNER JOIN admAtencion b on b.IdAtencion = a.IdDestino" +
             "INNER JOIN admAtencionContrato c on c.IdAtencion = b.IdAtencion and c.OrdPrioridad = 1" +
@@ -424,11 +402,13 @@ WHERE IdFactura =  @nroFactura";
           }
 
           //***************** Campo 17  ----Copago
+
           //***************** Campo 18  ---- Moderadora
 
           //**************** Campo 19  ------Recuperacion
 
           //**************** Campo 20 ------- Pagos Compartidos
+
           //*************** Campo 21
 
           extencionesSalud.Add(itemExtensionSalud);
