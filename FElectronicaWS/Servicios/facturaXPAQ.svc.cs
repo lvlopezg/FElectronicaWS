@@ -328,8 +328,185 @@ WHERE B.idcontrato is null and A.IdLocalizaTipo=1 and A.indhabilitado=1 and D.Id
                 ////anticiposWrk.Add(anticipoWrk);
                 documentoF2.anticipos = anticiposWrk;
 
-                //************************************************************ Detalle de Factura
-                using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
+        #region Extension Salud
+        //********************* Extension Sector Salud ****************************************************************
+        extensionSalud itemExtensionSalud = new extensionSalud();  //TODO: Implementacion de Campos de Salud
+        List<extensionSalud> extencionesSalud = new List<extensionSalud>();
+
+        using (SqlConnection conn = new SqlConnection(Properties.Settings.Default.DBConexion))
+        {
+
+          //****Prestador
+          conn.Open();
+          string qryPrestador = "SELECT ValConstanteT FROM genConstante WHERE CodConstante =@CodConstante";
+          SqlCommand cmdPrestador = new SqlCommand(qryPrestador, conn);
+          cmdPrestador.Parameters.Add("", SqlDbType.VarChar).Value = "CPFE";
+          SqlDataReader rdPrestador = cmdPrestador.ExecuteReader();
+          if (rdPrestador.HasRows)
+          {
+            rdPrestador.Read();
+            itemExtensionSalud.codigoPrestador = rdPrestador.GetString(0);
+          }
+          else
+          {
+            logFacturas.Warn("!! No fue posible obtener el codigo de Prestador !!");
+          }
+
+          //*********Numero y Tipo de Documento y Nombres y Apellidos Campos 2,3,4,5,6,7
+          string qryDatosPac = "SELECT d.CodTipoDoc , c.NumDocumento, c.ApeCliente, c.NomCliente FROM facFactura a " +
+            "INNER JOIN admAtencion b on b.IdAtencion = a.IdDestino" +
+            "INNER JOIN admCliente c on c.IdCliente = b.IdCliente" +
+            "INNER JOIN genTipoDoc d on d.IdTipoDoc = c.IdTipoDoc" +
+            "WHERE a.IdFactura =@idFactura";
+
+          SqlCommand cmdPaciente = new SqlCommand(qryDatosPac, conn);
+          cmdPaciente.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdPaciente = cmdPaciente.ExecuteReader();
+          if (rdPaciente.HasRows)
+          {
+            rdPaciente.Read();
+            itemExtensionSalud.tipoDocumentoIdentificacion = rdPaciente.GetString(0).Equals("NV") ? "CN" : rdPaciente.GetString(0);
+            itemExtensionSalud.numeroIdentificacion = rdPaciente.GetString(1);
+            string[ ] apellidos = UtilidadesFactura.separarApellidos(rdPaciente.GetString(2));
+            string[ ] nombres = UtilidadesFactura.separarNombres(rdPaciente.GetString(3));
+          }
+          //********* Tipo de Usuario y Poliza: Campo 8 y 15
+          string qryTipoUsua = "SELECT c.idTipoUsuario,C.numPoliza,*  ----esta sin definir en la Tabla  admAtencionContrato" +
+            "FROM facFactura a" +
+            "INNER JOIN admAtencion b on b.IdAtencion = a.IdDestino" +
+            "INNER JOIN admAtencionContrato c on c.IdAtencion = b.IdAtencion and c.OrdPrioridad = 1" +
+            "INNER JOIN genLista d on d.IdLista = c.idTipoUsuario" +
+            "WHERE a.IdFactura = @idFactura ";
+          SqlCommand cmdTipoUsua = new SqlCommand(qryTipoUsua, conn);
+          cmdTipoUsua.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdTipoUsua = cmdTipoUsua.ExecuteReader();
+          if (rdTipoUsua.HasRows)
+          {
+            rdTipoUsua.Read();
+            itemExtensionSalud.tipoDeUsuario = rdTipoUsua.GetInt16(0).ToString();
+            itemExtensionSalud.numeroPoliza = rdTipoUsua.GetInt16(1).ToString();
+          }
+
+          //********* Campo 9
+          string qryContyPago = "SELECT a.idContratoYpago" +
+            "FROM facFactura a" +
+            "INNER JOIN genLista d on d.IdLista = a.idContratoYpago" +
+            "WHERE a.idFactura = @idFactura";//TODO:Origen de NOmbre de Modalidades de Contratacion
+          SqlCommand cmdContyPaso = new SqlCommand(qryContyPago, conn);
+          cmdContyPaso.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdContyPaso = cmdContyPaso.ExecuteReader();
+          if (rdContyPaso.HasRows)
+          {
+            rdContyPaso.Read();
+            itemExtensionSalud.modalidadesContratacion = rdContyPaso.GetString(0).ToString();
+          }
+          //*************** Campo 10 - Cobertura 
+          string qryCobertura = "";//TODO: DEfinir Campo Cobertura
+          SqlCommand cmdCobertura = new SqlCommand(qryCobertura, conn);
+          cmdCobertura.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdCobertura = cmdCobertura.ExecuteReader();
+          if (rdCobertura.HasRows)
+          {
+            rdCobertura.Read();
+            itemExtensionSalud.cobertura = rdCobertura.GetString(0);
+          }
+
+          //*************** Campo 11 - Autorizaciones
+          string qryAutorizaciones = "";
+          SqlCommand cmdAutorizaciones = new SqlCommand(qryAutorizaciones, conn);
+          cmdAutorizaciones.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdAutorizaciones = cmdAutorizaciones.ExecuteReader();
+          if (rdAutorizaciones.HasRows)
+          {
+            List<string> Autorizaciones = new List<string>();
+            while (rdAutorizaciones.Read())
+            {
+              Autorizaciones.Add(rdAutorizaciones.GetString(0));
+            }
+            itemExtensionSalud.numeroAutorizacion = Autorizaciones;
+          }
+
+          // Campo 12 - Nro mi Pres
+          string qryNroMiPres = "";
+          SqlCommand cmdNroMiPres = new SqlCommand(qryNroMiPres, conn);
+          cmdNroMiPres.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdNroMiPres = cmdNroMiPres.ExecuteReader();
+          if (rdNroMiPres.HasRows)
+          {
+            List<string> NumerosMiPres = new List<string>();
+            while (rdNroMiPres.Read())
+            {
+              NumerosMiPres.Add(rdNroMiPres.GetString(0));
+            }
+            itemExtensionSalud.numeroMIPRES = NumerosMiPres;
+          }
+          //**************** Campo Nro 13 Numero id Suministro
+          string qryNroSuministro = "";
+          SqlCommand cmdNroSuministro = new SqlCommand(qryNroSuministro, conn);
+          cmdNroSuministro.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdNroSuministro = cmdNroSuministro.ExecuteReader();
+          if (rdNroSuministro.HasRows)
+          {
+            List<string> NumerosSuministro = new List<string>();
+            while (rdNroSuministro.Read())
+            {
+              NumerosSuministro.Add(rdNroMiPres.GetString(0));
+            }
+            itemExtensionSalud.numeroIdPrescripcion = NumerosSuministro;
+          }
+
+          //****************** Campo Numero 14 Numero de Contrato
+          string qryContrato = "SELECT NumeroContrato FROM conContrato";
+          SqlCommand cmdContrato = new SqlCommand(qryContrato, conn);
+          cmdContrato.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
+          SqlDataReader rdContrato = cmdContrato.ExecuteReader();
+          if (rdContrato.HasRows)
+          {
+            rdContrato.Read();
+            itemExtensionSalud.numeroContrato = rdContrato.GetString(0);
+          }
+
+          //**************** Campos Numero 15 y 16 Fecha de Inicio y Fecha Final de Atencion
+          string qryAtencion = "SELECT FecIngreso,FecEgreso FROM admAtencion WHERE IdAtencion=@idAtencion";
+          SqlCommand cmdAtencion = new SqlCommand(qryAtencion, conn);
+          cmdAtencion.Parameters.Add("@idAtencion", SqlDbType.Int).Value = nroAtencion;
+          SqlDataReader rdAtencion = cmdAtencion.ExecuteReader();
+          if (rdAtencion.HasRows)
+          {
+            rdAtencion.Read();
+            itemExtensionSalud.fechaInicioFacturacion = rdContrato.GetDateTime(0);
+            itemExtensionSalud.fechaFinFacturacion = rdContrato.GetDateTime(1);
+          }
+
+          //***************** Campo 17  ----Copago
+
+
+
+          //***************** Campo 18  ---- Moderadora
+
+
+
+
+          //**************** Campo 19  ------Recuperacion
+
+
+
+          //**************** Campo 20 ------- Pagos Compartidos
+
+
+
+          //*************** Campo 21
+
+
+
+          extencionesSalud.Add(itemExtensionSalud);
+
+          documentoF2.extensionesSalud = extencionesSalud;
+        }
+        #endregion
+
+        //************************************************************ Detalle de Factura
+        using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     conexion01.Open();
                     string qryFactura = "SELECT IdFactura,NumFactura,IdDestino,IdTransaccion,IdPlan,IdContrato,ValTotal,ValDescuento,ValDescuentoT,ValPagos,ValImpuesto,ValCobrar,IndNotaCred,IndTipoFactura,CodEnti,CodEsor,FecFactura,Ruta,IdCausal,IdUsuarioR,IndHabilitado,IdNoFacturado,valPos,valNoPos FROM  facFactura WHERE idFactura=@idFactura AND idDestino=@idAtencion";
@@ -419,65 +596,6 @@ LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
 LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
 WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura
 ORDER BY o.Idorden";
-
-                        ////////                        string strDetalleFac = @"SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
-                        ////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-                        ////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-                        ////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
-                        ////////FROM facfactura a
-                        ////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
-                        ////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
-                        ////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
-                        ////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
-                        ////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
-                        ////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
-                        ////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo IN (8,12)
-                        ////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino
-                        ////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
-                        ////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
-                        ////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-                        ////////WHERE a.IndTipoFactura='PAQ' AND  a.IdFactura=@idFactura
-                        ////////UNION ALL
-                        ////////SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
-                        ////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-                        ////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-                        ////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
-                        ////////FROM facfactura a
-                        ////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
-                        ////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
-                        ////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
-                        ////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
-                        ////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
-                        ////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
-                        ////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
-                        ////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal=2513
-                        ////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
-                        ////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
-                        ////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-                        ////////WHERE a.IndTipoFactura='PAQ' AND  a.idfactura=@idFactura
-                        ////////UNION ALL
-                        ////////SELECT isnull(h.NumAutorizacionInicial,'0')   AS Nro_Autorizacion,
-                        ////////upper(isnull(J.CodProMan,CASE ISNULL(f.REGCUM,'0') WHEN '0' THEN P.CodProducto ELSE F.REGCUM END )) as Cod_Servicio,
-                        ////////upper(( isnull(J.NomPRoman,P.NomProducto)) ) as Des_Servicio, f.Cantidad as Cantidad, f.ValTotal as Vlr_Unitario_Serv, 
-                        ////////isnull(AD.ValTotal,round(F.Cantidad*F.ValTotal,0)) as Vlr_Total_Serv
-                        ////////FROM facfactura a
-                        ////////INNER JOIN  concontrato b on a.idcontrato=b.idcontrato
-                        ////////INNER JOIN  admatencion c on a.iddestino=c.idatencion
-                        ////////INNER JOIN  admcliente d on d.idcliente=c.idcliente
-                        ////////INNER JOIN  gentipodoc e on e.idtipodoc=d.idtipodoc
-                        ////////INNER JOIN  facfacturadet f on f.idfactura=a.idfactura
-                        ////////LEFT JOIN facFacturaDetAjuDec AD ON AD.IdFactura = F.IdFactura and AD.IdProducto = F.IdProducto and AD.IdMovimiento = F.IdMovimiento
-                        ////////INNER JOIN  proproducto p on p.idproducto=f.idproducto AND p.IdProductoTipo not IN (8,12)
-                        ////////INNER JOIN  facmovimiento g on   g.idmovimiento=f.idmovimiento and g.iddestino=a.iddestino and g.IdProcPrincipal<>2513
-                        ////////LEFT JOIN vwFacProcPrincAsocPaq PQ on PQ.idfactura = a.idfactura and g.IdProcPrincipal=PQ.IdProcPrincipal 
-                        ////////LEFT JOIN admatencioncontrato h on h.idatencion=a.iddestino and a.idcontrato=h.idcontrato and a.idplan=h.idplan and h.indhabilitado=1
-                        ////////LEFT JOIN contarifa i on i.idtarifa=b.idtarifa
-                        ////////LEFT JOIN conManualAltDet J ON J.IdProducto = F.IdProducto AND J.IndHabilitado = 1 AND J.IdManual = i.IdManual
-                        ////////WHERE PQ.idfactura is null and a.IndTipoFactura='PAQ' AND   a.idfactura=@idFactura
-                        ////////ORDER BY 4";
-
-
-
 
                         SqlCommand cmdDetalleFac = new SqlCommand(strDetalleFac, conexion01);
 
