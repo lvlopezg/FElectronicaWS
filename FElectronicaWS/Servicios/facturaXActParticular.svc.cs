@@ -1,7 +1,10 @@
 ﻿using FElectronicaWS.Clases;
 using FElectronicaWS.Contratos;
+
 using Newtonsoft.Json;
+
 using NLog;
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -45,9 +48,11 @@ namespace FElectronicaWS.Servicios
                 //string _repLegal = string.Empty;
                 //string _RegimenFiscal = string.Empty;
                 //Int16 _idNaturaleza = 0;
-                int concepto = 0;
+                //int concepto = 0;
                 FormaPago formaPagoTmp = new FormaPago();
-                List<AnticiposItem> anticiposWrk = new List<AnticiposItem>();
+                //List<AnticiposItem> anticiposWrk = new List<AnticiposItem>();
+                string nombrePagos = string.Empty;
+                List<cargoDescuento> cargosDescuentos = new List<cargoDescuento>();
                 //Fin de Inicializacion
                 documentoRoot documentoF2 = new documentoRoot();
                 Documento facturaEnviar = new Documento();
@@ -90,7 +95,9 @@ WHERE IdFactura =@nroFactura";
                     }
                     if (_ValPagos > 0)
                     {
-                        string Consultapagos = "SELECT IdConcepto,Valor FROM facFacAtenConcepto WHERE IdFactura=@idFactura";
+                        string Consultapagos = "SELECT FF.IdConcepto,FF.Valor,F.NomConcepto FROM facFacAtenConcepto FF " +
+                          "INNER JOIN facConceptoPago F ON f.IdConcepto = FF.IdConcepto " +
+                          "WHERE IdFactura=@idFactura";
                         SqlCommand cmdConsultaPagos = new SqlCommand(Consultapagos, conn);
                         cmdConsultaPagos.Parameters.Add("@idfactura", SqlDbType.Int).Value = nroFactura;
                         SqlDataReader rdConsultapagos = cmdConsultaPagos.ExecuteReader();
@@ -98,15 +105,24 @@ WHERE IdFactura =@nroFactura";
                         {
                             while (rdConsultapagos.Read())
                             {
-                                AnticiposItem anticipoWrk = new AnticiposItem();
-                                anticipoWrk.comprobante = $"{rdConsultapagos.GetInt32(0)}-{nroFactura}";
-                                anticipoWrk.valorAnticipo = double.Parse(rdConsultapagos.GetDouble(1).ToString());
-                                anticiposWrk.Add(anticipoWrk);
+                                nombrePagos = rdConsultapagos.GetString(2);
+                                List<string> notasWRK = new List<string>();
+                                cargoDescuento cuotasWRK = new cargoDescuento();
+                                cuotasWRK.esCargo = false;
+                                cuotasWRK.codigo = "01";
+                                notasWRK.Add(nombrePagos);
+                                cuotasWRK.notas = notasWRK;
+                                cuotasWRK.valorImporte = double.Parse(rdConsultapagos.GetDouble(1).ToString());
+                                cuotasWRK.valorBaseMoneda = "COP";
+                                cuotasWRK.valorBase = 0; //double.Parse( _Valtotal.ToString());
+                                cuotasWRK.valorBaseMoneda = "COP";
+                                cargosDescuentos.Add(cuotasWRK);
                             }
                         }
+                        documentoF2.cargosDescuentos = cargosDescuentos;
+
                     }
                 }
-
                 //*********Clientes Naturales
                 ClienteNatural cliente = new ClienteNatural();
                 string urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteNatural?idFactura={nroFactura}";
@@ -169,14 +185,14 @@ WHERE IdFactura =@nroFactura";
                 notificaciones.Add(notificaItem);
                 facturaEnviar.notificaciones = notificaciones;
 
-                if (cliente.idRegimen.Equals("C"))
-                {
-                    adquirienteTmp.tipoRegimen = "48";
-                }
-                else
-                {
-                    adquirienteTmp.tipoRegimen = "49";
-                }
+                //if (cliente.idRegimen.Equals("C"))
+                //{
+                //    adquirienteTmp.tipoRegimen = "48";
+                //}
+                //else
+                //{
+                //    adquirienteTmp.tipoRegimen = "49";
+                //}
 
                 if (cliente.IdNaturaleza == 3)
                 {
@@ -217,8 +233,9 @@ WHERE IdFactura =@nroFactura";
                 adquirienteTmp.ubicacion = ubicacionCliente;
                 documentoF2.adquiriente = adquirienteTmp;
                 double TotalGravadoIva = double.Parse(_ValImpuesto.ToString());
-                documentoF2.anticipos = anticiposWrk;
-                //************************************************************ Detalle de Factura por Actividad ***********************************************************
+
+                // documentoF2.anticipos = anticiposWrk;
+                //************************************************************ Detalle de Factura por Actividad Particular***********************************************************
                 using (SqlConnection conexion01 = new SqlConnection(Properties.Settings.Default.DBConexion))
                 {
                     string qryFactura = "SELECT IdFactura,NumFactura,IdDestino,IdTransaccion,IdPlan,IdContrato,ValTotal,ValDescuento,ValDescuentoT,ValPagos,ValImpuesto,ValCobrar,IndNotaCred,IndTipoFactura,CodEnti,CodEsor,FecFactura,Ruta,IdCausal,IdUsuarioR,IndHabilitado,IdNoFacturado,valPos,valNoPos FROM  facFactura WHERE idFactura=@idFactura AND idDestino=@idAtencion";
@@ -286,7 +303,7 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o
 
                                     TibutosDetalle tributosWRKIva = new TibutosDetalle();
                                     tributosWRKIva.id = "01";
-                                    tributosWRKIva.nombre = "Iva";
+                                    tributosWRKIva.nombre = "IVA";
                                     tributosWRKIva.esImpuesto = true;
                                     tributosWRKIva.porcentaje = 0;
                                     tributosWRKIva.valorBase = double.Parse(rdDetalleFac.GetDouble(5).ToString());
@@ -331,7 +348,7 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o
                 TributosItem itemTributo = new TributosItem()
                 {
                     id = "01", //Total de Iva 
-                    nombre = "Iva",
+                    nombre = "IVA",
                     esImpuesto = true,
                     valorImporteTotal = 0,
                     detalles = tributosDetalle // DEtalle de los Ivas
@@ -365,7 +382,7 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o
                     string Clave = Properties.Settings.Default.clave;
                     string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
                     request.Headers.Add("Authorization", "Basic " + credenciales);
-                    Byte[] data = Encoding.UTF8.GetBytes(facturaJson);
+                    Byte[ ] data = Encoding.UTF8.GetBytes(facturaJson);
                     Stream st = request.GetRequestStream();
                     st.Write(data, 0, data.Length);
                     st.Close();
@@ -375,12 +392,12 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o
                     valores = request.Headers;
 
                     // Pone todos los nombres en un Arreglo
-                    string[] arr1 = valores.AllKeys;
+                    string[ ] arr1 = valores.AllKeys;
                     for (loop1 = 0; loop1 < arr1.Length; loop1++)
                     {
                         logFacturas.Info("Key: " + arr1[loop1] + "<br>");
                         // Todos los valores
-                        string[] arr2 = valores.GetValues(arr1[loop1]);
+                        string[ ] arr2 = valores.GetValues(arr1[loop1]);
                         for (loop2 = 0; loop2 < arr2.Length; loop2++)
                         {
                             logFacturas.Info("Value " + loop2 + ": " + arr2[loop2]);
@@ -414,14 +431,32 @@ WHERE a.IndTipoFactura='ACT' AND  a.idfactura= @idFactura ORDER BY A.IdFactura,o
                                 {
                                     try
                                     {
-                                        string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                        //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                        //logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
+                                        //webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                        ////System.Threading.Thread.Sleep(1000);
+                                        //logFacturas.Info($"Descarga de PDF Factura...Terminada");
+                                        //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                        //webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                        ////System.Threading.Thread.Sleep(1000);
+                                        //logFacturas.Info($"Descarga de XML...Terminada");
+                                        //string directorioFactura = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + DateTime.Now.Month.ToString();
+
+                                        string mes = facturaEnviar.fechaEmision.Substring(5, 2);
+                                        string year = facturaEnviar.fechaEmision.Substring(0, 4);
+                                        string directorioFactura = Properties.Settings.Default.urlDescargaPdfFACT + year + @"\" + mes;// + @"\" + DateTime.Now.Month.ToString();
+                                        DirectoryInfo info = new DirectoryInfo(directorioFactura);
+                                        if (!info.Exists)
+                                        {
+                                            info.Create();
+                                        }
+                                        string carpetaDescarga = directorioFactura + @"\" + respuesta.resultado.UUID + ".pdf";
                                         logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
                                         webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
-                                        //System.Threading.Thread.Sleep(1000);
                                         logFacturas.Info($"Descarga de PDF Factura...Terminada");
-                                        carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                        carpetaDescarga = directorioFactura + @"\" + respuesta.resultado.UUID + ".XML";
+                                        //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
                                         webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
-                                        //System.Threading.Thread.Sleep(1000);
                                         logFacturas.Info($"Descarga de XML...Terminada");
                                         using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                         {
@@ -447,10 +482,9 @@ VALUES(@IdFactura, @CodAdvertencia, @FecRegistro, @DescripcionAdv)";
                                                     foreach (AdvertenciasItem itemAdv in respuesta.advertencias)
                                                     {
                                                         cmdInsertarAdvertencia.Parameters["@IdFactura"].Value = nroFactura;
-                                                        cmdInsertarAdvertencia.Parameters["@CodError"].Value = itemAdv.codigo;
-                                                        //cmdInsertarAdvertencia.Parameters["@consecutivo"].Value = consecutivo;
+                                                        cmdInsertarAdvertencia.Parameters["@CodAdvertencia"].Value = itemAdv.codigo;
                                                         cmdInsertarAdvertencia.Parameters["@FecRegistro"].Value = DateTime.Now;
-                                                        cmdInsertarAdvertencia.Parameters["@DescripcionError"].Value = itemAdv.mensaje;
+                                                        cmdInsertarAdvertencia.Parameters["@DescripcionAdv"].Value = itemAdv.mensaje;
                                                         if (cmdInsertarAdvertencia.ExecuteNonQuery() > 0)
                                                         {
                                                             logFacturas.Info($"Se Inserta Detalle de Advertencias: Codigo Advertencia{itemAdv.codigo} Mensaje Advertencia:{itemAdv.mensaje}");

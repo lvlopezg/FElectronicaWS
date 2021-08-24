@@ -43,11 +43,11 @@ namespace FElectronicaWS.Servicios
                 string _usrNumDocumento = string.Empty;
                 //Byte _usrIdTipoDoc = 0;
                 string _numDocCliente = string.Empty;
-                Byte _tipoDocCliente = 0;
+                //Byte _tipoDocCliente = 0;
                 string _razonSocial = string.Empty;
                 string _repLegal = string.Empty;
                 string _RegimenFiscal = string.Empty;
-                Int16 _idNaturaleza = 0;
+                //Int16 _idNaturaleza = 0;
                 //int concepto = 0;
                 string DescNota = string.Empty;
                 FormaPago formaPagoTmp = new FormaPago();
@@ -84,7 +84,7 @@ namespace FElectronicaWS.Servicios
                 string _telefonoCliente = string.Empty;
                 string _municipioCliente = string.Empty;
                 string _departamento = string.Empty;
-                int _localizacionCliente = 0;
+                //int _localizacionCliente = 0;
                 string _correoCliente = string.Empty;
                 //**** 
                 string codCufeFactura = string.Empty;
@@ -262,14 +262,14 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
                 }
                 //adquirienteTmp.tipoIdentificacion = _tipoDocClienteDian;
 
-                if (cliente.idRegimen.Equals("C"))
-                {
-                    adquirienteTmp.tipoRegimen = "48";
-                }
-                else
-                {
-                    adquirienteTmp.tipoRegimen = "49";
-                }
+                //if (cliente.idRegimen.Equals("C"))
+                //{
+                //    adquirienteTmp.tipoRegimen = "48";
+                //}
+                //else
+                //{
+                //    adquirienteTmp.tipoRegimen = "49";
+                //}
                 //TODO: Aqui insertar lo que se defina de Responsabilidades  RUT documentoF2.adquiriente.responsabilidadesRUT
                 if (cliente.IdNaturaleza == 3)
                 {
@@ -382,7 +382,7 @@ and C.IdNumeroNota=@nroNotaDebito2 and A.IndTipoNota='D'";
 
                                 TibutosDetalle tributosWRKIva = new TibutosDetalle();
                                 tributosWRKIva.id = "01";
-                                tributosWRKIva.nombre = "Iva";
+                                tributosWRKIva.nombre = "IVA";
                                 tributosWRKIva.esImpuesto = true;
                                 tributosWRKIva.porcentaje = 0;
                                 tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
@@ -422,6 +422,22 @@ WHERE a.IdMovimiento=@idMovimiento";
                                 lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
                                 lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
                                 lineaProducto.valorBrutoMoneda = "COP";
+
+                                List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                                TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                                tributosWRKIva.id = "01";
+                                tributosWRKIva.nombre = "IVA";
+                                tributosWRKIva.esImpuesto = true;
+                                tributosWRKIva.porcentaje = 0;
+                                tributosWRKIva.valorBase = rdValidaDet.GetDouble(4);
+                                tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
+                                TotalGravadoIva = TotalGravadoIva + rdValidaDet.GetDouble(4);
+                                tributosWRKIva.tributoFijoUnidades = 0;
+                                tributosWRKIva.tributoFijoValorImporte = 0;
+                                listaTributos.Add(tributosWRKIva);
+
+                                lineaProducto.tributos = listaTributos;
+
                                 detalleProductos.Add(lineaProducto);
                             }
 
@@ -537,7 +553,7 @@ WHERE IdMovimiento = @idMovimiento";
                 TributosItem itemTributo = new TributosItem()
                 {
                     id = "01", //Total de Iva 
-                    nombre = "Iva",
+                    nombre = "IVA",
                     esImpuesto = true,
                     valorImporteTotal = 0,
                     detalles = tributosDetalle // DEtalle de los Ivas
@@ -775,16 +791,40 @@ WHERE IdMovimiento = @idMovimiento";
                                 {
                                     try
                                     {
-                                        //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
-                                        string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                        ////string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                        //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                        //logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
+                                        //webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                        ////System.Threading.Thread.Sleep(1000);
+                                        //logFacturas.Info($"Descarga de PDF Nota Debito...Terminada En:{carpetaDescarga}");
+                                        //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                        //webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                        ////System.Threading.Thread.Sleep(1000);
+                                        //logFacturas.Info($"Descarga de XML...Terminada En:{carpetaDescarga}");
+
+
+                                        //string directorioNC = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + DateTime.Now.Month.ToString();
+
+                                        string mes = NotaDebitoEnviar.fechaEmision.Substring(5, 2);
+                                        string year = NotaDebitoEnviar.fechaEmision.Substring(0, 4);
+                                        string directorioND = Properties.Settings.Default.urlDescargaPdfND + year + @"\" + mes;// + @"\" + DateTime.Now.Month.ToString();
+
+                                        DirectoryInfo info = new DirectoryInfo(directorioND);
+                                        if (!info.Exists)
+                                        {
+                                            info.Create();
+                                        }
+                                        string carpetaDescarga = directorioND + @"\" + respuesta.resultado.UUID + ".pdf";
                                         logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
                                         webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
-                                        //System.Threading.Thread.Sleep(1000);
-                                        logFacturas.Info($"Descarga de PDF Nota Debito...Terminada En:{carpetaDescarga}");
-                                        carpetaDescarga = Properties.Settings.Default.urlDescargaPdfND + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                        logFacturas.Info($"Descarga de PDF Notas Debito...Terminada");
+                                        carpetaDescarga = directorioND + @"\" + respuesta.resultado.UUID + ".XML";
+                                        //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
                                         webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
-                                        //System.Threading.Thread.Sleep(1000);
-                                        logFacturas.Info($"Descarga de XML...Terminada En:{carpetaDescarga}");
+                                        logFacturas.Info($"Descarga de XML de Notas Credito...Terminada");
+
+
+
                                         using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                         {
                                             conn3.Open();

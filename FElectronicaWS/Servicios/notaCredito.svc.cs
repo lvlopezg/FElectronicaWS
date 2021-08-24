@@ -1,7 +1,10 @@
 ﻿using FElectronicaWS.Clases;
 using FElectronicaWS.Contratos;
+
 using Newtonsoft.Json;
+
 using NLog;
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -54,7 +57,7 @@ namespace FElectronicaWS.Servicios
                     conn.Open();
                     string qryEspeciales = "SELECT IdDestino,IndTipoFactura FROM facFactura where IdFactura=@idFactura";
                     SqlCommand cmdEspeciales = new SqlCommand(qryEspeciales, conn);
-                    cmdEspeciales.Parameters.Add("@idFactura",SqlDbType.Int).Value=nroFactura;
+                    cmdEspeciales.Parameters.Add("@idFactura", SqlDbType.Int).Value = nroFactura;
                     SqlDataReader rdEspeciales = cmdEspeciales.ExecuteReader();
                     if (rdEspeciales.HasRows)
                     {
@@ -76,15 +79,15 @@ namespace FElectronicaWS.Servicios
                 {
                     urlClientes = $"{Properties.Settings.Default.urlServicioClientes}ClienteJuridico?idFactura={nroFactura}";
                 }
-                    logFacturas.Info("URL de Request:" + urlClientes);
-                    HttpWebRequest peticion = WebRequest.Create(urlClientes) as HttpWebRequest;
-                    peticion.Method = "GET";
-                    peticion.ContentType = "application/json";
-                    HttpWebResponse respuestaClientes = peticion.GetResponse() as HttpWebResponse;
-                    StreamReader sr = new StreamReader(respuestaClientes.GetResponseStream());
-                    string infCliente = sr.ReadToEnd();
-                    logFacturas.Info("Cliente:" + infCliente);
-                     Cliente cliente = JsonConvert.DeserializeObject<Cliente>(infCliente);
+                logFacturas.Info("URL de Request:" + urlClientes);
+                HttpWebRequest peticion = WebRequest.Create(urlClientes) as HttpWebRequest;
+                peticion.Method = "GET";
+                peticion.ContentType = "application/json";
+                HttpWebResponse respuestaClientes = peticion.GetResponse() as HttpWebResponse;
+                StreamReader sr = new StreamReader(respuestaClientes.GetResponseStream());
+                string infCliente = sr.ReadToEnd();
+                logFacturas.Info("Cliente:" + infCliente);
+                Cliente cliente = JsonConvert.DeserializeObject<Cliente>(infCliente);
 
 
                 //****************** CLIENTE
@@ -199,8 +202,8 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                         string qryTipoDocDian = "SELECT TipoDocDian FROM homologaTipoDocDian WHERE IdTipoDoc=@tipoDoc";
                         SqlCommand cmdTipoDocDian = new SqlCommand(qryTipoDocDian, connXX);
                         cmdTipoDocDian.Parameters.Add("@tipoDoc", SqlDbType.TinyInt).Value = cliente.TipoDoc_Cliente;
-                        logFacturas.Info($" cliente.TipoDoc_Cliente:{ cliente.TipoDoc_Cliente}"); 
-                         Int16 tipoDoc = Int16.Parse(cmdTipoDocDian.ExecuteScalar().ToString());
+                        logFacturas.Info($" cliente.TipoDoc_Cliente:{ cliente.TipoDoc_Cliente}");
+                        Int16 tipoDoc = Int16.Parse(cmdTipoDocDian.ExecuteScalar().ToString());
                         _tipoDocClienteDian = Int32.Parse(tipoDoc.ToString());
                         logFacturas.Info($"_tipoDocClienteDian:{_tipoDocClienteDian}");
                     }
@@ -215,14 +218,14 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                         cliente.telefono = cliente.telefono.Substring(0, 10);
                     }
                     adquirienteTmp.telefono = cliente.telefono;
-                    if (cliente.idRegimen.Equals("C"))
-                    {
-                        adquirienteTmp.tipoRegimen = "48";
-                    }
-                    else
-                    {
-                        adquirienteTmp.tipoRegimen = "49";
-                    }
+                    //if (cliente.idRegimen.Equals("C"))
+                    //{
+                    //    adquirienteTmp.tipoRegimen = "48";
+                    //}
+                    //else
+                    //{
+                    //    adquirienteTmp.tipoRegimen = "49";
+                    //}
                     List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
                     NotificacionesItem notificaItem = new NotificacionesItem();
                     notificaItem.tipo = 1;
@@ -308,6 +311,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                         conexion01.Open();
                         try
                         {
+                            List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
                             SqlCommand sqlValidaDet = new SqlCommand("spTraeDetalleNotas", conexion01);
                             sqlValidaDet.CommandType = CommandType.StoredProcedure;
                             sqlValidaDet.Parameters.Add("@idNota", SqlDbType.Int).Value = nroNotaCredito;
@@ -316,7 +320,6 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
                             {
                                 while (rdValidaDet.Read())
                                 {
-                                    List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
                                     DetallesItem lineaProducto = new DetallesItem();
                                     lineaProducto.tipoDetalle = 1; // Linea Normal
                                     string codigoProducto = rdValidaDet.GetString(0);
@@ -332,7 +335,7 @@ where A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito2 and A.IndTipoNota='C
 
                                     TibutosDetalle tributosWRKIva = new TibutosDetalle();
                                     tributosWRKIva.id = "01";
-                                    tributosWRKIva.nombre = "Iva";
+                                    tributosWRKIva.nombre = "IVA";
                                     tributosWRKIva.esImpuesto = true;
                                     tributosWRKIva.porcentaje = 0;
                                     tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
@@ -369,14 +372,28 @@ WHERE a.IdMovimiento=@idMovimiento";
                                     lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
                                     lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
                                     lineaProducto.valorBrutoMoneda = "COP";
+
+                                    TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                                    tributosWRKIva.id = "01";
+                                    tributosWRKIva.nombre = "IVA";
+                                    tributosWRKIva.esImpuesto = true;
+                                    tributosWRKIva.porcentaje = 0;
+                                    tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
+                                    tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
+                                    TotalGravadoIva = TotalGravadoIva + double.Parse(_Valtotal.ToString());
+                                    tributosWRKIva.tributoFijoUnidades = 0;
+                                    tributosWRKIva.tributoFijoValorImporte = 0;
+                                    listaTributos.Add(tributosWRKIva);
+                                    lineaProducto.tributos = listaTributos;
+
                                     detalleProductos.Add(lineaProducto);
                                 }
                             }
                         }
                         catch (Exception sqlExp)
                         {
-                            string errorSQL = sqlExp.Message + "     " + sqlExp.StackTrace;
-                            logFacturas.Warn("Se ha presentado una excepcion de SQL" + errorSQL);
+                            string errorSQL = $"{sqlExp.Message}  {sqlExp.StackTrace}";
+                            logFacturas.Warn($"Se ha presentado una excepcion de SQL: {errorSQL}");
                             throw;
                         }
                     }
@@ -397,7 +414,7 @@ WHERE IdMovimiento = @idMovimiento";
                         {
                             if (_codigoCausal == 6)
                             {
-                                ObservacionesNota = $"Nota Credito por Concepto de Otros Motivos No codificados Factura{nroFactura} ";
+                                ObservacionesNota = $"Nota Credito por Concepto de Otros Motivos No codificados Factura:{nroFactura} ";
                             }
                             else if (_codigoCausal == 2)
                             {
@@ -429,7 +446,7 @@ WHERE IdMovimiento = @idMovimiento";
                     TributosItem itemTributo = new TributosItem()
                     {
                         id = "01", //Total de Iva 
-                        nombre = "Iva",
+                        nombre = "IVA",
                         esImpuesto = true,
                         valorImporteTotal = 0,
                         detalles = tributosDetalle // DEtalle de los Ivas
@@ -466,7 +483,7 @@ WHERE IdMovimiento = @idMovimiento";
                         string Clave = Properties.Settings.Default.clave;
                         string credenciales = Convert.ToBase64String(Encoding.ASCII.GetBytes(Usuario + ":" + Clave));
                         request.Headers.Add("Authorization", "Basic " + credenciales);
-                        Byte[] data = Encoding.UTF8.GetBytes(NotaCreditoJson);
+                        Byte[ ] data = Encoding.UTF8.GetBytes(NotaCreditoJson);
                         Stream st = request.GetRequestStream();
                         st.Write(data, 0, data.Length);
                         st.Close();
@@ -475,12 +492,12 @@ WHERE IdMovimiento = @idMovimiento";
                         valores = request.Headers;
 
                         // Pone todos los nombres en un Arreglo
-                        string[] arr1 = valores.AllKeys;
+                        string[ ] arr1 = valores.AllKeys;
                         for (loop1 = 0; loop1 < arr1.Length; loop1++)
                         {
                             logFacturas.Info("Key: " + arr1[loop1] + "<br>");
                             // Todos los valores
-                            string[] arr2 = valores.GetValues(arr1[loop1]);
+                            string[ ] arr2 = valores.GetValues(arr1[loop1]);
                             for (loop2 = 0; loop2 < arr2.Length; loop2++)
                             {
                                 logFacturas.Info("Value " + loop2 + ": " + arr2[loop2]);
@@ -516,16 +533,44 @@ WHERE IdMovimiento = @idMovimiento";
                                     {
                                         try
                                         {
-                                            //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
-                                            string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            ////string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            //logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
+                                            //webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                            ////System.Threading.Thread.Sleep(1000);
+                                            //logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
+                                            //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                            //webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                            ////System.Threading.Thread.Sleep(1000);
+                                            //logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
+
+
+
+                                            //string directorioNC = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + DateTime.Now.Month.ToString();
+
+                                            string mes = NotaCreditoEnviar.fechaEmision.Substring(5, 2);
+                                            string year = NotaCreditoEnviar.fechaEmision.Substring(0, 4);
+                                            string directorioNC = Properties.Settings.Default.urlDescargaPdfNC + year + @"\" + mes;// + @"\" + DateTime.Now.Month.ToString();
+
+
+                                            DirectoryInfo info = new DirectoryInfo(directorioNC);
+                                            if (!info.Exists)
+                                            {
+                                                info.Create();
+                                            }
+                                            string carpetaDescarga = directorioNC + @"\" + respuesta.resultado.UUID + ".pdf";
                                             logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
                                             webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
-                                            //System.Threading.Thread.Sleep(1000);
-                                            logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
-                                            carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                            logFacturas.Info($"Descarga de PDF NC...Terminada");
+                                            carpetaDescarga = directorioNC + @"\" + respuesta.resultado.UUID + ".XML";
+                                            //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
                                             webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
-                                            //System.Threading.Thread.Sleep(1000);
-                                            logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
+                                            logFacturas.Info($"Descarga de XML de NC...Terminada");
+
+
+
+
+
                                             using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                             {
                                                 conn3.Open();

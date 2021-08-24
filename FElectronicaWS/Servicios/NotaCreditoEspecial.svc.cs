@@ -222,14 +222,14 @@ WHERE A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito and A.IndTipoNota='C'
                         cliente.telefono = cliente.telefono.Substring(0, 10);
                     }
                     adquirienteTmp.telefono = cliente.telefono;
-                    if (cliente.idRegimen.Equals("C"))
-                    {
-                        adquirienteTmp.tipoRegimen = "48";
-                    }
-                    else
-                    {
-                        adquirienteTmp.tipoRegimen = "49";
-                    }
+                    //if (cliente.idRegimen.Equals("C"))
+                    //{
+                    //    adquirienteTmp.tipoRegimen = "48";
+                    //}
+                    //else
+                    //{
+                    //    adquirienteTmp.tipoRegimen = "49";
+                    //}
                     List<NotificacionesItem> notificaciones = new List<NotificacionesItem>();
                     NotificacionesItem notificaItem = new NotificacionesItem();
                     notificaItem.tipo = 1;
@@ -343,7 +343,7 @@ WHERE A.Indhabilitado=1 and C.IdNumeroNota=@nroNotaCredito and A.IndTipoNota='C'
 
                                     TibutosDetalle tributosWRKIva = new TibutosDetalle();
                                     tributosWRKIva.id = "01";
-                                    tributosWRKIva.nombre = "Iva";
+                                    tributosWRKIva.nombre = "IVA";
                                     tributosWRKIva.esImpuesto = true;
                                     tributosWRKIva.porcentaje = double.Parse(rdValidaDet.GetDecimal(9).ToString()); //********************************
                                     _porcentajeIva= double.Parse(rdValidaDet.GetDecimal(9).ToString());
@@ -382,6 +382,21 @@ WHERE a.IdMovimiento=@idMovimiento";
                                     lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
                                     lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
                                     lineaProducto.valorBrutoMoneda = monedaNota;
+
+                                    List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                                    TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                                    tributosWRKIva.id = "01";
+                                    tributosWRKIva.nombre = "IVA";
+                                    tributosWRKIva.esImpuesto = true;
+                                    tributosWRKIva.porcentaje = 0;
+                                    tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
+                                    tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
+                                    TotalGravadoIva = TotalGravadoIva + double.Parse(_Valtotal.ToString());
+                                    tributosWRKIva.tributoFijoUnidades = 0;
+                                    tributosWRKIva.tributoFijoValorImporte = 0;
+                                    listaTributos.Add(tributosWRKIva);
+                                    lineaProducto.tributos = listaTributos;
+
                                     detalleProductos.Add(lineaProducto);
                                 }
                             }
@@ -442,7 +457,7 @@ WHERE IdMovimiento = @idMovimiento";
                     TributosItem itemTributo = new TributosItem()
                     {
                         id = "01", //Total de Iva 
-                        nombre = "Iva",
+                        nombre = "IVA",
                         esImpuesto = true,
                         valorImporteTotal = _valorImporteIva,
                         detalles = tributosDetalle // Detalle de los Ivas
@@ -529,16 +544,39 @@ WHERE IdMovimiento = @idMovimiento";
                                     {
                                         try
                                         {
-                                            //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
-                                            string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            ////string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            //logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
+                                            //webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                            ////System.Threading.Thread.Sleep(1000);
+                                            //logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
+                                            //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                            //webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                            ////System.Threading.Thread.Sleep(1000);
+                                            //logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
+
+
+                                            //string directorioNC = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + DateTime.Now.Month.ToString();
+                                            string mes = NotaCreditoEnviar.fechaEmision.Substring(5, 2);
+                                            string year = NotaCreditoEnviar.fechaEmision.Substring(0, 4);
+                                            string directorioNC = Properties.Settings.Default.urlDescargaPdfNC + year + @"\" + mes;// + @"\" + DateTime.Now.Month.ToString();
+
+                                            DirectoryInfo info = new DirectoryInfo(directorioNC);
+                                            if (!info.Exists)
+                                            {
+                                                info.Create();
+                                            }
+                                            string carpetaDescarga = directorioNC + @"\" + respuesta.resultado.UUID + ".pdf";
                                             logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
                                             webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
-                                            //System.Threading.Thread.Sleep(1000);
-                                            logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
-                                            carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                            logFacturas.Info($"Descarga de PDF NC...Terminada");
+                                            carpetaDescarga = directorioNC + @"\" + respuesta.resultado.UUID + ".XML";
+                                            //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
                                             webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
-                                            //System.Threading.Thread.Sleep(1000);
-                                            logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
+                                            logFacturas.Info($"Descarga de XML de NC...Terminada");
+
+
+
                                             using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                             {
                                                 conn3.Open();

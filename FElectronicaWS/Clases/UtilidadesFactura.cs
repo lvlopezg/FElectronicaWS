@@ -7,12 +7,17 @@ namespace FElectronicaWS.Clases
 {
   public static class UtilidadesFactura
   {
-    public static string[ ] separarApellidos(string apellidos)
+    public static string[] separarApellidos(string apellidos)
     {
-      string[ ] Apellidos = apellidos.Split(' ');
+      List<string> Apellidos = new List<string>();
+      foreach (string item in apellidos.Split(' '))
+      {
+        Apellidos.Add(item);
+      }
       string primerApellido = string.Empty;
       string segundoApellido = string.Empty;
-      for (int i = 0; i <= Apellidos.Length; i++)
+
+      for (int i = 0; i <= Apellidos.Count; i++)
       {
         if (Apellidos[i].Length < 3)
         {
@@ -21,50 +26,60 @@ namespace FElectronicaWS.Clases
         else
         {
           primerApellido = primerApellido + " " + Apellidos[i];
-          for (int j = i + 1; j < Apellidos.Length; j++)
+          for (int j = i + 1; j < Apellidos.Count; j++)
           {
             segundoApellido = segundoApellido + " " + Apellidos[j];
           }
-          i = Apellidos.Length;
+          i = Apellidos.Count;
         }
-
       }
       Apellidos[0] = primerApellido;
-      if (Apellidos.Length > 1)
+      if (Apellidos.Count > 1)
       {
-        Apellidos[1] = segundoApellido;
+        Apellidos.Add(segundoApellido);
       }
-      return Apellidos;
+      else
+      {
+        Apellidos.Add(" ");
+      }
+      return Apellidos.ToArray();
     }
 
-    public static string[ ] separarNombres(string nombres)
+    public static string[] separarNombres(string nombresWRK)
     {
-      string[ ] Nombres = nombres.Split(' ');
+      List<string> nombres= new List<string>();
+      foreach (string item in nombresWRK.Split(' '))
+      {
+        nombres.Add(item);
+      }
       string primerNombre = string.Empty;
       string segundoNombre = string.Empty;
-      for (int i = 0; i <= Nombres.Length; i++)
+      for (int i = 0; i <= nombres.Count; i++)
       {
-        if (Nombres[i].Length < 3)
+        if (nombres[i].Length < 3)
         {
-          primerNombre = primerNombre + " " + Nombres[i];
+          primerNombre = primerNombre + " " + nombres[i];
         }
         else
         {
-          primerNombre = primerNombre + " " + Nombres[i];
-          for (int j = i + 1; j < Nombres.Length; j++)
+          primerNombre = primerNombre + " " + nombres[i];
+          for (int j = i + 1; j < nombres.Count; j++)
           {
-            segundoNombre = segundoNombre + " " + Nombres[j];
+            segundoNombre = segundoNombre + " " + nombres[j];
           }
-          i = Nombres.Length;
+          i = nombres.Count;
         }
-
       }
-      Nombres[0] = primerNombre;
-      if (Nombres.Length > 1)
+      nombres[0] = primerNombre;
+      if (nombres.Count > 1)
       {
-        Nombres[1] = segundoNombre;
+        nombres.Add(segundoNombre);
       }
-      return Nombres;
+      else
+      {
+        nombres.Add(" ");
+      }
+      return nombres.ToArray();
     }
 
 

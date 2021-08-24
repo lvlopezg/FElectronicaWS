@@ -70,7 +70,7 @@ namespace FElectronicaWS.Servicios
                 string _telefonoCliente = string.Empty;
                 string _municipioCliente = string.Empty;
                 string _departamento = string.Empty;
-                int _localizacionCliente = 0;
+                //int _localizacionCliente = 0;
                 string _correoCliente = string.Empty;
                 //**** 
                 string codCufeFactura = string.Empty;
@@ -156,14 +156,14 @@ WHERE idFactura = @idFactura";
                     adquirienteTmp.correo = cliente.cuenta_correo.Trim().Split(';')[0];
                     adquirienteTmp.telefono = cliente.Nro_Telefono;
 
-                    if (cliente.idRegimen.Equals("C"))
-                    {
-                        adquirienteTmp.tipoRegimen = "48";
-                    }
-                    else
-                    {
-                        adquirienteTmp.tipoRegimen = "49";
-                    }
+                    //if (cliente.idRegimen.Equals("C"))
+                    //{
+                    //    adquirienteTmp.tipoRegimen = "48";
+                    //}
+                    //else
+                    //{
+                    //    adquirienteTmp.tipoRegimen = "49";
+                    //}
 
                     if (cliente.IdNaturaleza == 3)
                     {
@@ -271,7 +271,7 @@ WHERE idFactura = @idFactura";
 
                                     TibutosDetalle tributosWRKIva = new TibutosDetalle();
                                     tributosWRKIva.id = "01";
-                                    tributosWRKIva.nombre = "Iva";
+                                    tributosWRKIva.nombre = "IVA";
                                     tributosWRKIva.esImpuesto = true;
                                     tributosWRKIva.porcentaje = 0;
                                     tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
@@ -311,6 +311,20 @@ WHERE a.IdMovimiento=@idMovimiento";
                                     lineaProducto.valorUnitarioBruto = double.Parse(_Valtotal.ToString());
                                     lineaProducto.valorBruto = double.Parse(_Valtotal.ToString());
                                     lineaProducto.valorBrutoMoneda = "COP";
+
+                                    List<TibutosDetalle> listaTributos = new List<TibutosDetalle>();
+                                    TibutosDetalle tributosWRKIva = new TibutosDetalle();
+                                    tributosWRKIva.id = "01";
+                                    tributosWRKIva.nombre = "IVA";
+                                    tributosWRKIva.esImpuesto = true;
+                                    tributosWRKIva.porcentaje = 0;
+                                    tributosWRKIva.valorBase = double.Parse(_Valtotal.ToString());
+                                    tributosWRKIva.valorImporte = double.Parse(_Valtotal.ToString()) * 0;
+                                    TotalGravadoIva = TotalGravadoIva + double.Parse(_Valtotal.ToString());
+                                    tributosWRKIva.tributoFijoUnidades = 0;
+                                    tributosWRKIva.tributoFijoValorImporte = 0;
+                                    listaTributos.Add(tributosWRKIva);
+                                    lineaProducto.tributos = listaTributos;
 
                                     detalleProductos.Add(lineaProducto);
                                 }
@@ -377,7 +391,7 @@ WHERE IdMovimiento = @idMovimiento";
                     TributosItem itemTributo = new TributosItem()
                     {
                         id = "01", //Total de Iva 
-                        nombre = "Iva",
+                        nombre = "IVA",
                         esImpuesto = true,
                         valorImporteTotal = 0,
                         detalles = tributosDetalle // DEtalle de los Ivas
@@ -461,13 +475,35 @@ WHERE IdMovimiento = @idMovimiento";
                                     {
                                         try
                                         {
-                                            string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            //string carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".pdf";
+                                            //logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
+                                            //webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
+                                            //logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
+                                            //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                            //webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
+                                            //logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
+
+                                            //string directorioNC = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + DateTime.Now.Month.ToString();
+                                            string mes = NotaCreditoEnviar.fechaEmision.Substring(5, 2);
+                                            string year = NotaCreditoEnviar.fechaEmision.Substring(0, 4);
+                                            string directorioNC = Properties.Settings.Default.urlDescargaPdfNC + year + @"\" + mes;// + @"\" + DateTime.Now.Month.ToString();
+                                            DirectoryInfo info = new DirectoryInfo(directorioNC);
+                                            if (!info.Exists)
+                                            {
+                                                info.Create();
+                                            }
+                                            string carpetaDescarga = directorioNC + @"\" + respuesta.resultado.UUID + ".pdf";
                                             logFacturas.Info("Carpeta de Descarga:" + carpetaDescarga);
                                             webClient.DownloadFile(respuesta.resultado.URLPDF, carpetaDescarga);
-                                            logFacturas.Info($"Descarga de PDF Nota Credito...Terminada en: {carpetaDescarga}");
-                                            carpetaDescarga = Properties.Settings.Default.urlDescargaPdfNC + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
+                                            logFacturas.Info($"Descarga de PDF NC...Terminada");
+                                            carpetaDescarga = directorioNC + @"\" + respuesta.resultado.UUID + ".XML";
+                                            //carpetaDescarga = Properties.Settings.Default.urlDescargaPdfFACT + DateTime.Now.Year + @"\" + respuesta.resultado.UUID + ".XML";
                                             webClient.DownloadFile(respuesta.resultado.URLXML, carpetaDescarga);
-                                            logFacturas.Info($"Descarga de XML(ZIP) Nota Credito...Terminada en {carpetaDescarga}");
+                                            logFacturas.Info($"Descarga de XML de NC...Terminada");
+
+
+
+
                                             using (SqlConnection conn3 = new SqlConnection(Properties.Settings.Default.DBConexion))
                                             {
                                                 conn3.Open();
